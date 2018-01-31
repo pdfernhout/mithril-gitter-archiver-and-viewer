@@ -1,0 +1,15 @@
+{
+  "name": "mithril-gitter-archiver",
+  "version": "1.0.0",
+  "description": "Tools for downloading and processing the MithrilJS Gitter archives.",
+  "main": "generate_word_stats.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mithril",
+    "gitter"
+  ],
+  "author": "Paul D. Fernhout",
+  "license": "MIT"
+}
