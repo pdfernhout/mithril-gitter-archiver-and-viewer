@@ -62,17 +62,25 @@ const boostrapFiles = {
     "viewer.js": "application/javascript",
     "mithril.v1.1.6.js": "application/javascript",
     "tachyons.v4.9.0.css": "text/css",
+
+    "allMessages.json": "application/json",
+    "stats/stats_users.txt": "text/plain",
+    "stats/stats_messages.txt": "text/plain",
+    "stats/stats_words.txt": "text/plain",
+    "stats/stats_words_alphabetical.txt": "text/plain"
 }
 
 const apiPathForBootstrap = "/"
+const apiPathForData = "/data/"
 
-function getBootstrapFile(request, response) {
+function getBootstrapFile(request, response, apiPath, folder) {
     const parsedURL = url.parse(request.url, true)
     // Only return whitelisted files
-    const fileName = parsedURL.pathname.substring(apiPathForBootstrap.length)
+    const fileName = parsedURL.pathname.substring(apiPath.length)
+    console.log("bootstrap", apiPath, fileName, folder)
     const mimeType = boostrapFiles[fileName]
     if (mimeType) {
-        const filePath = path.resolve(__dirname, "client/" + fileName)
+        const filePath = path.resolve(__dirname, folder + fileName)
         respondWithFileContents(response, null, filePath, null, mimeType, "nocache")
     } else {
         respondWithResourceNotFoundError(response, request.url)
@@ -80,8 +88,10 @@ function getBootstrapFile(request, response) {
 }
 
 function handleGetRequest(request, response) {
-    if (request.url.startsWith(apiPathForBootstrap)) {
-        getBootstrapFile(request, response)
+    if (request.url.startsWith(apiPathForData)) {
+        getBootstrapFile(request, response, apiPathForData, "mithril-gitter-data/")
+    } else if (request.url.startsWith(apiPathForBootstrap)) {
+        getBootstrapFile(request, response, apiPathForBootstrap, "client/")
     } else {
         respondWithResourceNotFoundError(response, request.url)
     }
