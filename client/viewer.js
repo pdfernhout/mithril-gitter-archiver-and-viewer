@@ -157,6 +157,13 @@ function search() {
 
 const pageSize = 1000
 
+function choosePage(pageCount) {
+    const newPageString = prompt("Goto page 1 - " + pageCount + "?")
+    if (!newPageString) return
+    const newPage = Math.min(pageCount, Math.max(1, parseInt(newPageString))) - 1
+    resultPage = newPage
+}
+
 function displayPager(result) {
     const pageCount = Math.ceil(result.length / pageSize)
     return m("div.ml5",
@@ -164,7 +171,7 @@ function displayPager(result) {
             ? [
                 m("span.mr2.b", { onclick: () => resultPage = 0 }, "|<"),
                 m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<<"),
-                m("span.w3", (resultPage + 1), " of ", pageCount),
+                m("span.w3", {onclick: () => choosePage(pageCount) }, (resultPage + 1), " of ", pageCount),
                 m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">>"),
                 m("span.ml2.b", { onclick: () => resultPage = pageCount - 1 }, ">|")
             ] 
