@@ -63,6 +63,12 @@ function jumpToMessage(message) {
     selectedMessage = message
 }
 
+function jumpToUser(username) {
+    show = "users"
+    currentUsername = username
+    userResultPage = 0
+}
+
 function displayMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3", 
         { 
@@ -73,7 +79,9 @@ function displayMessagesForList(subset, includeUser) {
             onclick: () => jumpToMessage(message),
         }, message.sent),
         includeUser
-            ? [m("span.mr2" + ((selectedMessage === message) ? ".b" : ""), message.username)]
+            ? [m("span.mr2.i" + ((selectedMessage === message) ? ".b" : ""), {
+                onclick: () => jumpToUser(message.username)
+            }, message.username)]
             : [],
         m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, message.text)
     ))
@@ -120,7 +128,11 @@ function displayUsers() {
     const table = sortedUsers.map(username => {
         const user = users[username]
         const isSelected = currentUsername === username
-        return m("div.ml2", { key: user.id },
+        return m("div.ml2",
+            {
+                key: user.id,
+                oncreate: (currentUsername === username) ? (vnode) => vnode.dom.scrollIntoView() : undefined
+            },
             m("span" + (isSelected ? ".b" : ""), 
                 {
                     onclick: () => {
