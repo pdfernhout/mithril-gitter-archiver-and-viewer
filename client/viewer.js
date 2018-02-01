@@ -112,6 +112,7 @@ function displayUsers() {
         )
     })
     const sortCharacter = m("span.b", sortReverse ? "▲" : "▼")
+    // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
             m("span.dib", { style: "width: 12rem", onclick: () => headerClick("id") }, "ID", ((sortBy === "id") ? sortCharacter : [])),
