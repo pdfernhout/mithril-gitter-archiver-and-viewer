@@ -29,11 +29,13 @@ let currentUsername = null
 }
 */
 
-function displayMessagesForList(subset) {
+function displayMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3", 
         { key: message.id }, 
-        m("span.blue", message.sent),
-        " ", 
+        m("span.blue.mr2", message.sent),
+        includeUser
+            ? [m("span.mr2", message.username)]
+            : [],
         m("span", /* { style: "white-space: pre" }, */ message.text)
     ))
 }
@@ -115,6 +117,7 @@ function displayUsers() {
 
 let searchString = ""
 let searchResult = []
+let resultPage = 0
 
 function onSearchInputKeyDown(event) {
     if (event.keyCode === 13) {
@@ -132,25 +135,48 @@ function search() {
     for (const message of messages) {
         if (re.test(message.text)) {
             result.push(message)
+            /*
             if (result.length >= 1000) {
                 result.push({id: " TOO MUCH ", sent: "", text: "TOO MANY SEARCH RESULTS"})
                 break
             }
+            */
         }
     }
     searchResult = result
+    resultPage = 0
+}
+
+const pageSize = 1000
+
+function page(result) {
+    const pageResult = result.slice(resultPage * pageSize, resultPage * pageSize + pageSize)
+    const pageCount = Math.ceil(result.length / pageSize)
+    return m("div", [
+        m("div.ml5",
+            (result.length > pageSize)
+                ? [
+                    m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<<"),
+                    m("span.w3", (resultPage + 1), " of ", pageCount),
+                    m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">>")
+                ] 
+                : []
+        ),
+        displayMessagesForList(pageResult, "includeUser")
+    ])
 }
 
 function displayMessages() {
     return m("div.ml2", [
-        "Search:", m("input.ml1", {
+        "Search (regex, case-insensitive):", m("input.ml1", {
             value: searchString,
             onchange: (event) => searchString = event.target.value,
             onkeydown: (event) => onSearchInputKeyDown(event)
         }),
-        m("button", { onclick: () => search() }, "Search"),
+        m("button.ml2", { onclick: () => search() }, "Search"),
+        m("span.ml2", "# matches: " + searchResult.length),
         m("br"),
-        displayMessagesForList(searchResult)
+        page(searchResult)
     ])
 }
 
