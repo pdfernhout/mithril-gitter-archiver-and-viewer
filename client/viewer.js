@@ -56,7 +56,7 @@ function headerClick(field) {
     }
 }
 
-function displayViewer() {
+function displayUsers() {
     const sortedUsers = Object.keys(users)
     switch (sortBy) {
     case "id":
@@ -109,16 +109,37 @@ function displayViewer() {
     return [header, table]
 }
 
+function displayMessages() {
+    return "unfinished"
+}
+
+let show = "users"
+
+function displayViewer() {
+    return m("div", [
+        m("div.mb2.ml5",
+            m("span" + (show === "users" ? ".b" : ""), {
+                onclick: () => show = "users" 
+            }, "Users (" + Object.keys(users).length + ")"),
+            m("span.ml3" + (show === "messages" ? ".b" : ""), {
+                onclick: () => show = "messages"
+            }, "Messages (" + messages.length + ")")
+        ),
+        (show === "users") 
+            ? displayUsers()
+            : displayMessages()
+    ])
+}
+
 const GitterArchiveViewer = {
     view: function() {
         const isEverythingLoaded = stats_messages && messages && stats_users && users
         return m(".main", [
             m("h1.ba.b--blue", { class: "title" }, "Gitter Archive Viewer"),
-            m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
-            m("br"),
             isEverythingLoaded 
                 ? [ displayViewer() ] 
                 : [
+                    m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
                     m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
                     m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
                     m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
