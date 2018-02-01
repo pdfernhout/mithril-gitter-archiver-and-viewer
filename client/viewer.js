@@ -204,7 +204,7 @@ const GitterArchiveViewer = {
     view: function() {
         const isEverythingLoaded = stats_messages && messages && stats_users && users
         return m(".main", [
-            m("h1.ba.b--blue", { class: "title" }, "Gitter Archive Viewer"),
+            m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
             isEverythingLoaded 
                 ? [ displayViewer() ] 
                 : [
