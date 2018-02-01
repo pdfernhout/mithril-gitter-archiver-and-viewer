@@ -29,6 +29,15 @@ let currentUsername = null
 }
 */
 
+function displayMessagesForList(subset) {
+    return subset.map(message => m("div.ml3", 
+        { key: message.id }, 
+        m("span.blue", message.sent),
+        " ", 
+        m("span", /* { style: "white-space: pre" }, */ message.text)
+    ))
+}
+
 function displayMessagesForUser(username) {
     const result = []
     for (const message of messages) {
@@ -36,12 +45,7 @@ function displayMessagesForUser(username) {
             result.push(message)
         }
     }
-    return result.map(message => m("div.ml3", 
-        { key: message.id }, 
-        m("span.blue", message.sent),
-        " ", 
-        m("span", /* { style: "white-space: pre" }, */ message.text)
-    ))
+    return displayMessagesForList(result)
 }
 
 let sortBy = "id"
@@ -109,8 +113,45 @@ function displayUsers() {
     return [header, table]
 }
 
+let searchString = ""
+let searchResult = []
+
+function onSearchInputKeyDown(event) {
+    if (event.keyCode === 13) {
+        event.preventDefault()
+        searchString = event.target.value
+        search()
+    } else {
+        event.redraw = false
+    }
+}
+
+function search() {
+    const result = []
+    const re = new RegExp(searchString, "i")
+    for (const message of messages) {
+        if (re.test(message.text)) {
+            result.push(message)
+            if (result.length >= 1000) {
+                result.push({id: " TOO MUCH ", sent: "", text: "TOO MANY SEARCH RESULTS"})
+                break
+            }
+        }
+    }
+    searchResult = result
+}
+
 function displayMessages() {
-    return "unfinished"
+    return m("div.ml2", [
+        "Search:", m("input.ml1", {
+            value: searchString,
+            onchange: (event) => searchString = event.target.value,
+            onkeydown: (event) => onSearchInputKeyDown(event)
+        }),
+        m("button", { onclick: () => search() }, "Search"),
+        m("br"),
+        displayMessagesForList(searchResult)
+    ])
 }
 
 let show = "users"
