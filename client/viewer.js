@@ -7,6 +7,8 @@ let messages = null
 
 let currentUsername = null
 
+let show = "users"
+
 let sortBy = "id"
 let sortReverse = false
 
@@ -191,8 +193,6 @@ function displayMessages() {
         page(searchResult)
     ])
 }
-
-let show = "users"
 
 function displayViewer() {
     return m("div", [
