@@ -14,7 +14,6 @@ let searchString = ""
 let searchResult = []
 let resultPage = 0
 
-
 /* Example message:
   "id": "550198834c839f3268162e60",
   "sent": "2015-03-12T13:45:39.963Z",
@@ -226,25 +225,25 @@ const GitterArchiveViewer = {
 async function startup() {
     stats_messages = await m.request({
         method: "GET",
-        url: "/data/stats/stats_messages.txt",
+        url: "data/stats/stats_messages.txt",
         deserialize: text => text
     })
 
     stats_users = await m.request({
         method: "GET",
-        url: "/data/stats/stats_users.txt",
+        url: "data/stats/stats_users.txt",
         deserialize: text => text
     })
 
     users = await m.request({
         method: "GET",
-        url: "/data/allUsers.json"
+        url: "data/allUsers.json"
     })
 
     // await on this later so we can process the user data while we are waiting
     const promiseForAllMessages = m.request({
         method: "GET",
-        url: "/data/allMessages.json"
+        url: "data/allMessages.json"
     })
 
     updateUserRankAndPostCount()

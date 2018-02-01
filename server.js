@@ -90,7 +90,7 @@ function getBootstrapFile(request, response, apiPath, folder) {
 
 function handleGetRequest(request, response) {
     if (request.url.startsWith(apiPathForData)) {
-        getBootstrapFile(request, response, apiPathForData, "mithril-gitter-data/")
+        getBootstrapFile(request, response, apiPathForData, "client/data/")
     } else if (request.url.startsWith(apiPathForBootstrap)) {
         getBootstrapFile(request, response, apiPathForBootstrap, "client/")
     } else {
