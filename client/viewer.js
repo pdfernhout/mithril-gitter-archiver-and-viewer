@@ -149,22 +149,27 @@ function search() {
 
 const pageSize = 1000
 
+function displayPager(result) {
+    const pageCount = Math.ceil(result.length / pageSize)
+    return m("div.ml5",
+        (result.length > pageSize)
+            ? [
+                m("span.mr2.b", { onclick: () => resultPage = 0 }, "|<"),
+                m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<<"),
+                m("span.w3", (resultPage + 1), " of ", pageCount),
+                m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">>"),
+                m("span.ml2.b", { onclick: () => resultPage = pageCount - 1 }, ">|")
+            ] 
+            : []
+    )
+}
+
 function page(result) {
     const pageResult = result.slice(resultPage * pageSize, resultPage * pageSize + pageSize)
-    const pageCount = Math.ceil(result.length / pageSize)
     return m("div", [
-        m("div.ml5",
-            (result.length > pageSize)
-                ? [
-                    m("span.mr2.b", { onclick: () => resultPage = 0 }, "|<"),
-                    m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<"),
-                    m("span.w3", (resultPage + 1), " of ", pageCount),
-                    m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">"),
-                    m("span.ml2.b", { onclick: () => resultPage = pageCount - 1 }, ">|")
-                ] 
-                : []
-        ),
-        displayMessagesForList(pageResult, "includeUser")
+        displayPager(result),
+        displayMessagesForList(pageResult, "includeUser"),
+        displayPager(result)
     ])
 }
 
