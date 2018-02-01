@@ -13,6 +13,7 @@ let show = "users"
 let currentUsername = null
 let sortBy = "id"
 let sortReverse = false
+let userResultPage = 0
 
 // Search view
 let searchString = ""
@@ -85,7 +86,7 @@ function displayMessagesForUser(username) {
             result.push(message)
         }
     }
-    return displayMessagesForList(result)
+    return page(result)
 }
 
 function headerClick(field) {
@@ -122,7 +123,10 @@ function displayUsers() {
         return m("div.ml2", { key: user.id },
             m("span" + (isSelected ? ".b" : ""), 
                 {
-                    onclick: () => currentUsername === username ? currentUsername = null : currentUsername = username
+                    onclick: () => {
+                        currentUsername === username ? currentUsername = null : currentUsername = username
+                        userResultPage = 0
+                    }
                 },
                 m("span.dib", { style: "width: 12rem" }, user.username),
                 " ",
@@ -180,16 +184,33 @@ function search() {
 }
 
 function setResultPage(value) {
-    show === "search" 
-        ? searchResultPage = value
-        : messageResultPage = value
+    switch(show) {
+    case "users":
+        userResultPage = value
+        break
+    case "search":
+        searchResultPage = value
+        break
+    case "messages":
+        messageResultPage = value
+        break
+    default:
+        throw new Error("setResultPage: unexpected case: " + show)
+    }
 }
 
 
 function getResultPage() {
-    return show === "search" 
-        ? searchResultPage
-        : messageResultPage
+    switch(show) {
+    case "users":
+        return userResultPage
+    case "search":
+        return searchResultPage
+    case "messages":
+        return messageResultPage
+    default:
+        throw new Error("getResultPage: unexpected case: " + show)
+    }
 }
 
 function choosePage(pageCount) {
@@ -214,11 +235,11 @@ function displayPager(result) {
     )
 }
 
-function page(result) {
+function page(result, includeUser) {
     const pageResult = result.slice(getResultPage() * pageSize, getResultPage() * pageSize + pageSize)
     return m("div", [
         displayPager(result),
-        displayMessagesForList(pageResult, "includeUser"),
+        displayMessagesForList(pageResult, includeUser),
         displayPager(result)
     ])
 }
@@ -233,13 +254,13 @@ function displaySearch() {
         m("button.ml2", { onclick: () => search() }, "Search"),
         m("span.ml2", "# matches: " + searchResult.length),
         m("br"),
-        page(searchResult)
+        page(searchResult, "includeUser")
     ])
 }
 
 function displayMessages() {
     return m("div.ml2", [
-        page(messages)
+        page(messages, "includeUser")
     ])
 }
 
