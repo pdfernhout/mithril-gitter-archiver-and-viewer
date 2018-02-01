@@ -3,4 +3,5 @@ new-messages
 private
 live-test
 allMessages.json
+allUsers.json
 stats_*

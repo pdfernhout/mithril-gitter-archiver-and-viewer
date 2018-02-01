@@ -5,6 +5,8 @@ const messageByID = {}
 let duplicateCount = 0
 let uniqueCount = 0
 
+const allUsers = {}
+
 const fileNames = fs.readdirSync("messages")
 for (let fileName of fileNames) {
     console.log("processing", fileName)
@@ -25,10 +27,19 @@ for (let fileName of fileNames) {
             username: message.fromUser.username,
             text: message.text
         })
+
+        if (!allUsers[message.fromUser.username]) {
+            allUsers[message.fromUser.username] = message.fromUser
+        } else if (allUsers[message.fromUser.username].id !== message.fromUser.id) {
+            throw new Error("User name is not unique for: " + message.fromUser.username)
+        }
     }
 }
 
 allMessages.sort((a, b) => a.sent < b.sent ? -1 : (a.sent > b.sent ? 1 : 0))
 
 console.log("uniqueCount", uniqueCount)
+
 fs.writeFileSync("allMessages.json", JSON.stringify(allMessages, null, 1))
+
+fs.writeFileSync("allUsers.json", JSON.stringify(allUsers, null, 1))
