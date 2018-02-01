@@ -180,7 +180,7 @@ function page(result) {
     ])
 }
 
-function displayMessages() {
+function displaySearch() {
     return m("div.ml2", [
         "Search (regex, case-insensitive):", m("input.ml1", {
             value: searchString,
@@ -194,19 +194,28 @@ function displayMessages() {
     ])
 }
 
+function displayMessages() {
+    return m("div.ml2", [
+        page(messages)
+    ])
+}
+
 function displayViewer() {
     return m("div", [
         m("div.mb2.ml5",
             m("span" + (show === "users" ? ".b" : ""), {
                 onclick: () => show = "users" 
-            }, "Users (" + Object.keys(users).length + ")"),
+            }, "Users (" + Object.keys(users).length + ")"), 
+            m("span.ml3" + (show === "search" ? ".b" : ""), {
+                onclick: () => show = "search"
+            }, "Search (" + searchResult.length + ")"),
             m("span.ml3" + (show === "messages" ? ".b" : ""), {
                 onclick: () => show = "messages"
-            }, "Messages (" + messages.length + ")")
+            }, "Messages (" + messages.length + ")"),
         ),
-        (show === "users") 
-            ? displayUsers()
-            : displayMessages()
+        (show === "users") ? displayUsers() : [],
+        (show === "search") ? displaySearch() : [],
+        (show === "messages") ? displayMessages() : [],
     ])
 }
 
