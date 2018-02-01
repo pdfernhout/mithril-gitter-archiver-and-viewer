@@ -17,10 +17,13 @@ let sortReverse = false
 // Search view
 let searchString = ""
 let searchResult = []
-let resultPage = 0
+let searchResultPage = 0
 
 // Messages view
 let selectedMessage = null
+let messageResultPage = 0
+
+const pageSize = 1000
 
 /* Example message:
 {
@@ -55,7 +58,7 @@ function jumpToMessage(message) {
         return
     }
     show = "messages"
-    resultPage = Math.floor(messages.indexOf(message) / pageSize)
+    messageResultPage = Math.floor(messages.indexOf(message) / pageSize)
     selectedMessage = message
 }
 
@@ -66,12 +69,12 @@ function displayMessagesForList(subset, includeUser) {
             oncreate: (selectedMessage === message) ? (vnode) => vnode.dom.scrollIntoView() : undefined
         }, 
         m("span.blue.mr2" + ((selectedMessage === message) ? ".b" : ""), {
-            onclick: () => jumpToMessage(message) 
+            onclick: () => jumpToMessage(message),
         }, message.sent),
         includeUser
-            ? [m("span.mr2", message.username)]
+            ? [m("span.mr2" + ((selectedMessage === message) ? ".b" : ""), message.username)]
             : [],
-        m("span", { style: (selectedMessage === message) ? "white-space: pre" : "" }, message.text)
+        m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, message.text)
     ))
 }
 
@@ -173,16 +176,27 @@ function search() {
         }
     }
     searchResult = result
-    resultPage = 0
+    searchResultPage = 0
 }
 
-const pageSize = 1000
+function setResultPage(value) {
+    show === "search" 
+        ? searchResultPage = value
+        : messageResultPage = value
+}
+
+
+function getResultPage() {
+    return show === "search" 
+        ? searchResultPage
+        : messageResultPage
+}
 
 function choosePage(pageCount) {
     const newPageString = prompt("Goto page 1 - " + pageCount + "?")
     if (!newPageString) return
     const newPage = Math.min(pageCount, Math.max(1, parseInt(newPageString))) - 1
-    resultPage = newPage
+    setResultPage(newPage)
 }
 
 function displayPager(result) {
@@ -190,18 +204,18 @@ function displayPager(result) {
     return m("div.ml5",
         (result.length > pageSize)
             ? [
-                m("span.mr2.b", { onclick: () => resultPage = 0 }, "|<"),
-                m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<<"),
-                m("span.w3", {onclick: () => choosePage(pageCount) }, (resultPage + 1), " of ", pageCount),
-                m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">>"),
-                m("span.ml2.b", { onclick: () => resultPage = pageCount - 1 }, ">|")
+                m("span.mr2.b", { onclick: () => setResultPage(0) }, "|<"),
+                m("span.mr2.b", { onclick: () => setResultPage(Math.max(getResultPage() - 1, 0)) }, "<<"),
+                m("span.w3", {onclick: () => choosePage(pageCount) }, (getResultPage() + 1), " of ", pageCount),
+                m("span.ml2.b", { onclick: () => setResultPage(Math.min(getResultPage() + 1, pageCount - 1)) }, ">>"),
+                m("span.ml2.b", { onclick: () => setResultPage(pageCount - 1) }, ">|")
             ] 
             : []
     )
 }
 
 function page(result) {
-    const pageResult = result.slice(resultPage * pageSize, resultPage * pageSize + pageSize)
+    const pageResult = result.slice(getResultPage() * pageSize, getResultPage() * pageSize + pageSize)
     return m("div", [
         displayPager(result),
         displayMessagesForList(pageResult, "includeUser"),
