@@ -7,6 +7,14 @@ let messages = null
 
 let currentUsername = null
 
+let sortBy = "id"
+let sortReverse = false
+
+let searchString = ""
+let searchResult = []
+let resultPage = 0
+
+
 /* Example message:
   "id": "550198834c839f3268162e60",
   "sent": "2015-03-12T13:45:39.963Z",
@@ -49,9 +57,6 @@ function displayMessagesForUser(username) {
     }
     return displayMessagesForList(result)
 }
-
-let sortBy = "id"
-let sortReverse = false
 
 function headerClick(field) {
     currentUsername = null
@@ -114,10 +119,6 @@ function displayUsers() {
     )
     return [header, table]
 }
-
-let searchString = ""
-let searchResult = []
-let resultPage = 0
 
 function onSearchInputKeyDown(event) {
     if (event.keyCode === 13) {
