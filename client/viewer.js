@@ -1,20 +1,26 @@
 /* global m */
 
+// Processed data to display
 let stats_messages = "Loading..."
 let stats_users = "Loading..."
 let users = null
 let messages = null
 
-let currentUsername = null
-
+// Which view of: users, search, and messages
 let show = "users"
 
+// User table view
+let currentUsername = null
 let sortBy = "id"
 let sortReverse = false
 
+// Search view
 let searchString = ""
 let searchResult = []
 let resultPage = 0
+
+// Messages view
+let selectedMessage = null
 
 /* Example message:
 {
@@ -43,14 +49,29 @@ v is version of user info
 gv is gravatar version (for cache busting)
 */
 
+function jumpToMessage(message) {
+    if (selectedMessage === message) {
+        selectedMessage = null
+        return
+    }
+    show = "messages"
+    resultPage = Math.floor(messages.indexOf(message) / pageSize)
+    selectedMessage = message
+}
+
 function displayMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3", 
-        { key: message.id }, 
-        m("span.blue.mr2", message.sent),
+        { 
+            key: message.id,
+            oncreate: (selectedMessage === message) ? (vnode) => vnode.dom.scrollIntoView() : undefined
+        }, 
+        m("span.blue.mr2" + ((selectedMessage === message) ? ".b" : ""), {
+            onclick: () => jumpToMessage(message) 
+        }, message.sent),
         includeUser
             ? [m("span.mr2", message.username)]
             : [],
-        m("span", /* { style: "white-space: pre" }, */ message.text)
+        m("span", { style: (selectedMessage === message) ? "white-space: pre" : "" }, message.text)
     ))
 }
 
