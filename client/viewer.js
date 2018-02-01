@@ -156,9 +156,11 @@ function page(result) {
         m("div.ml5",
             (result.length > pageSize)
                 ? [
-                    m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<<"),
+                    m("span.mr2.b", { onclick: () => resultPage = 0 }, "|<"),
+                    m("span.mr2.b", { onclick: () => resultPage = Math.max(resultPage - 1, 0) }, "<"),
                     m("span.w3", (resultPage + 1), " of ", pageCount),
-                    m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">>")
+                    m("span.ml2.b", { onclick: () => resultPage = Math.min(resultPage + 1, pageCount - 1) }, ">"),
+                    m("span.ml2.b", { onclick: () => resultPage = pageCount - 1 }, ">|")
                 ] 
                 : []
         ),
