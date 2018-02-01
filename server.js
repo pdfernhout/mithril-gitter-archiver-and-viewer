@@ -64,6 +64,7 @@ const boostrapFiles = {
     "tachyons.v4.9.0.css": "text/css",
 
     "allMessages.json": "application/json",
+    "allUsers.json": "application/json",
     "stats/stats_users.txt": "text/plain",
     "stats/stats_messages.txt": "text/plain",
     "stats/stats_words.txt": "text/plain",
