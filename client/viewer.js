@@ -15,25 +15,30 @@ let searchResult = []
 let resultPage = 0
 
 /* Example message:
-  "id": "550198834c839f3268162e60",
-  "sent": "2015-03-12T13:45:39.963Z",
-  "username": "StephanHoyer",
-  "text": "Hi Leo"
- }
- */
-/* example user:
 {
- "spacejack": {
-  "id": "55edda3f0fc9f982beafee8a",
-  "username": "spacejack",
-  "displayName": "spacejack",
-  "url": "/spacejack",
-  "avatarUrl": "https://avatars-01.gitter.im/gh/uv/4/spacejack",
-  "avatarUrlSmall": "https://avatars1.githubusercontent.com/u/11592867?v=4&s=60",
-  "avatarUrlMedium": "https://avatars1.githubusercontent.com/u/11592867?v=4&s=128",
-  "v": 18,
-  "gv": "4"
+    "id": "550198834c839f3268162e60",
+    "sent": "2015-03-12T13:45:39.963Z",
+    "username": "StephanHoyer",
+    "text": "Hi Leo"
 }
+*/
+
+/* Example user:
+{
+    "spacejack": {
+        "id": "55edda3f0fc9f982beafee8a",
+        "username": "spacejack",
+        "displayName": "spacejack",
+        "url": "/spacejack",
+        "avatarUrl": "https://avatars-01.gitter.im/gh/uv/4/spacejack",
+        "avatarUrlSmall": "https://avatars1.githubusercontent.com/u/11592867?v=4&s=60",
+        "avatarUrlMedium": "https://avatars1.githubusercontent.com/u/11592867?v=4&s=128",
+        "v": 18,
+        "gv": "4"
+    }
+}
+v is version of user info
+gv is gravatar version (for cache busting)
 */
 
 function displayMessagesForList(subset, includeUser) {
