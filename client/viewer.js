@@ -19,6 +19,7 @@ let userResultPage = 0
 let searchString = ""
 let searchResult = []
 let searchResultPage = 0
+let regexError = null
 
 // Messages view
 let selectedMessage = null
@@ -178,8 +179,17 @@ function onSearchInputKeyDown(event) {
 }
 
 function search() {
+    regexError = null
     const result = []
-    const re = new RegExp(searchString, "i")
+    let re
+    try {
+        re = new RegExp(searchString, "i")
+    } catch (e) {
+        regexError = e.message
+        searchResult = result
+        searchResultPage = 0
+        return
+    }
     for (const message of messages) {
         if (re.test(message.text)) {
             result.push(message)
@@ -210,7 +220,6 @@ function setResultPage(value) {
         throw new Error("setResultPage: unexpected case: " + show)
     }
 }
-
 
 function getResultPage() {
     switch(show) {
@@ -266,6 +275,7 @@ function displaySearch() {
         m("button.ml2", { onclick: () => search() }, "Search"),
         m("span.ml2", "# matches: " + searchResult.length),
         m("br"),
+        regexError ? m("div.red", regexError) : [],
         page(searchResult, "includeUser")
     ])
 }
