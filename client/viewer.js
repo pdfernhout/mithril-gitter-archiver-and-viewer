@@ -70,7 +70,7 @@ function jumpToUser(username) {
 }
 
 function displayMessagesForList(subset, includeUser) {
-    return subset.map(message => m("div.ml3", 
+    return subset.map(message => m("div.ml3.mt1", 
         { 
             key: message.id,
             oncreate: (selectedMessage === message) ? (vnode) => vnode.dom.scrollIntoView() : undefined
