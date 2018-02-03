@@ -116,10 +116,10 @@ function displayUsers() {
         sortedUsers.sort((a, b) => users[a].displayName.localeCompare(users[b].displayName))
         break
     case "rank":
-        sortedUsers.sort((a, b) => users[b].rank - users[a].rank)
+        sortedUsers.sort((a, b) => users[a].rank - users[b].rank)
         break
     case "posts":
-        sortedUsers.sort((a, b) => users[b].postCount - users[a].postCount)
+        sortedUsers.sort((a, b) => users[a].postCount - users[b].postCount)
         break
     default:
         throw new Error("unexpected sort case")
@@ -151,7 +151,7 @@ function displayUsers() {
             isSelected ? displayMessagesForUser(username) : []
         )
     })
-    const sortCharacter = m("span.b", sortReverse ? "▲" : "▼")
+    const sortCharacter = m("span.b", sortReverse ? "▼" : "▲")
     // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
