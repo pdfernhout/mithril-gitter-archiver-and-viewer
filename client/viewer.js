@@ -193,12 +193,6 @@ function search() {
     for (const message of messages) {
         if (re.test(message.text)) {
             result.push(message)
-            /*
-            if (result.length >= 1000) {
-                result.push({id: " TOO MUCH ", sent: "", text: "TOO MANY SEARCH RESULTS"})
-                break
-            }
-            */
         }
     }
     searchResult = result
