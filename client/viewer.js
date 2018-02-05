@@ -107,6 +107,8 @@ function loadStateFromHash() {
     selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
     messageResultPage = valueOrDefault(hashParams.messageResultPage, 0, "number")
 
+    // TODO: determine messageResultPage for a message if the page is not specified
+
     if (searchString && searchString !== lastSearchString) search()
     m.redraw()
 }
