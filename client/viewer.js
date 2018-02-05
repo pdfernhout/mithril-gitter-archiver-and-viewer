@@ -1,4 +1,7 @@
+"use strict"
 /* global m */
+
+import HashUtils from "./HashUtils.js"
 
 // Processed data to display
 let stats_messages = "Loading..."
@@ -17,6 +20,7 @@ let userResultPage = 0
 
 // Search view
 let searchString = ""
+let lastSearchString = ""
 let searchResult = []
 let searchResultPage = 0
 let regexError = null
@@ -54,20 +58,78 @@ v is version of user info
 gv is gravatar version (for cache busting)
 */
 
+// Track the hash
+
+function saveStateToHash() {
+    // This will trigger a loadStateFromHash each time it is called
+    const hashParams = HashUtils.getHashParams()
+    Object.assign(hashParams, {
+        show,
+        currentUsername,
+        sortBy,
+        sortReverse,
+        userResultPage,
+        searchString,
+        searchResultPage,
+        selectedMessage: selectedMessage ? selectedMessage.id : "",
+        messageResultPage
+    })
+    HashUtils.setHashParams(hashParams, "ignoreFalsey")
+}
+
+function valueOrDefault(value, theDefault, type) {
+    // assume the value if always a string
+    if (value) {
+        if (type === "number") return parseInt(value)
+        if (type === "boolean") return value === "true"
+        if (type === "message") {
+            // Inefficient to loop every time
+            for (let message of messages) {
+                if (message.id === value) return message
+            }
+            return theDefault
+        }
+        return value
+    }
+    return theDefault
+}
+
+function loadStateFromHash() {
+    const hashParams = HashUtils.getHashParams()
+
+    show = valueOrDefault(hashParams.show, "users")
+    currentUsername = valueOrDefault(hashParams.currentUsername, "")
+    sortBy = valueOrDefault(hashParams.sortBy, "id")
+    sortReverse = valueOrDefault(hashParams.sortReverse, false, "boolean")
+    userResultPage = valueOrDefault(hashParams.userResultPage, 0, "number")
+    searchString = valueOrDefault(hashParams.searchString, "")
+    searchResultPage = valueOrDefault(hashParams.searchResultPage, 0, "number")
+    selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
+    messageResultPage = valueOrDefault(hashParams.messageResultPage, 0, "number")
+
+    if (searchString && searchString !== lastSearchString) search()
+    m.redraw()
+}
+
+// End track the hash section
+
 function jumpToMessage(message) {
     if (selectedMessage === message) {
         selectedMessage = null
+        saveStateToHash()
         return
     }
     show = "messages"
     messageResultPage = Math.floor(messages.indexOf(message) / pageSize)
     selectedMessage = message
+    saveStateToHash()
 }
 
 function jumpToUser(username) {
     show = "users"
     currentUsername = username
     userResultPage = 0
+    saveStateToHash()
 }
 
 function displayMessagesForList(subset, includeUser) {
@@ -105,6 +167,7 @@ function headerClick(field) {
     } else {
         sortBy = field
     }
+    saveStateToHash()
 }
 
 function displayUsers() {
@@ -139,6 +202,7 @@ function displayUsers() {
                     onclick: () => {
                         currentUsername === username ? currentUsername = null : currentUsername = username
                         userResultPage = 0
+                        saveStateToHash()
                     }
                 },
                 m("span.dib", { style: "width: 12rem" }, user.username),
@@ -172,12 +236,18 @@ function onSearchInputKeyDown(event) {
     if (event.keyCode === 13) {
         event.preventDefault()
         searchString = event.target.value
-        search()
+        searchButtonClicked()
     } else {
         event.redraw = false
     }
 }
 
+function searchButtonClicked() {
+    searchResultPage = 0
+    saveStateToHash()
+}
+
+// search is only called indirectly through a hash change
 function search() {
     regexError = null
     const result = []
@@ -187,7 +257,6 @@ function search() {
     } catch (e) {
         regexError = e.message
         searchResult = result
-        searchResultPage = 0
         return
     }
     for (const message of messages) {
@@ -196,7 +265,7 @@ function search() {
         }
     }
     searchResult = result
-    searchResultPage = 0
+    lastSearchString = searchString
 }
 
 function setResultPage(value) {
@@ -213,6 +282,7 @@ function setResultPage(value) {
     default:
         throw new Error("setResultPage: unexpected case: " + show)
     }
+    saveStateToHash()
 }
 
 function getResultPage() {
@@ -233,6 +303,7 @@ function choosePage(pageCount) {
     if (!newPageString) return
     const newPage = Math.min(pageCount, Math.max(1, parseInt(newPageString))) - 1
     setResultPage(newPage)
+    saveStateToHash()
 }
 
 function displayPager(result) {
@@ -266,7 +337,7 @@ function displaySearch() {
             onchange: (event) => searchString = event.target.value,
             onkeydown: (event) => onSearchInputKeyDown(event)
         }),
-        m("button.ml2", { onclick: () => search() }, "Search"),
+        m("button.ml2", { onclick: () => searchButtonClicked() }, "Search"),
         m("span.ml2", "# matches: " + searchResult.length),
         m("br"),
         regexError ? m("div.red", regexError) : [],
@@ -280,17 +351,22 @@ function displayMessages() {
     ])
 }
 
+function setShow(value) {
+    show = value
+    saveStateToHash()
+}
+
 function displayViewer() {
     return m("div", [
         m("div.mb2.ml5",
             m("span" + (show === "users" ? ".b" : ""), {
-                onclick: () => show = "users" 
+                onclick: () => setShow("users" )
             }, "Users (" + Object.keys(users).length + ")"), 
             m("span.ml3" + (show === "search" ? ".b" : ""), {
-                onclick: () => show = "search"
+                onclick: () => setShow("search")
             }, "Search (" + searchResult.length + ")"),
             m("span.ml3" + (show === "messages" ? ".b" : ""), {
-                onclick: () => show = "messages"
+                onclick: () => setShow("messages")
             }, "Messages (" + messages.length + ")"),
         ),
         (show === "users") ? displayUsers() : [],
@@ -343,6 +419,10 @@ async function startup() {
     updateUserRankAndPostCount()
 
     messages = await promiseForAllMessages
+
+    // set up hash tracking
+    window.onhashchange = () => loadStateFromHash()
+    loadStateFromHash()
 }
 
 function updateUserRankAndPostCount() {
