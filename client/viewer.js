@@ -377,19 +377,28 @@ function displayViewer() {
     ])
 }
 
+function isEverythingLoaded() {
+    return stats_messages && messages && stats_users && users
+}
+
+class LoadingProgressView {
+    view() {
+        return m("div",
+            m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
+            m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
+            m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
+            m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
+        )
+    }
+}
+
 const GitterArchiveViewer = {
     view: function() {
-        const isEverythingLoaded = stats_messages && messages && stats_users && users
         return m(".main", [
             m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
-            isEverythingLoaded 
+            isEverythingLoaded() 
                 ? [ displayViewer() ] 
-                : [
-                    m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
-                    m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
-                    m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
-                    m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
-                ]
+                : m(LoadingProgressView)
         ])
     }
 }
