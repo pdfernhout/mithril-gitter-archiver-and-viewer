@@ -358,9 +358,9 @@ function setShow(value) {
     saveStateToHash()
 }
 
-function displayViewer() {
-    return m("div", [
-        m("div.mb2.ml5",
+class MainMenuView {
+    view() {
+        return m("div.mb2.ml5",
             m("span" + (show === "users" ? ".b" : ""), {
                 onclick: () => setShow("users" )
             }, "Users (" + Object.keys(users).length + ")"), 
@@ -370,7 +370,13 @@ function displayViewer() {
             m("span.ml3" + (show === "messages" ? ".b" : ""), {
                 onclick: () => setShow("messages")
             }, "Messages (" + messages.length + ")"),
-        ),
+        )
+    }
+}
+
+function displayViewer() {
+    return m("div", [
+        m(MainMenuView),
         (show === "users") ? displayUsers() : [],
         (show === "search") ? displaySearch() : [],
         (show === "messages") ? displayMessages() : [],
