@@ -358,25 +358,23 @@ function setShow(value) {
     saveStateToHash()
 }
 
-class MainMenuView {
-    view() {
-        return m("div.mb2.ml5",
-            m("span" + (show === "users" ? ".b" : ""), {
-                onclick: () => setShow("users" )
-            }, "Users (" + Object.keys(users).length + ")"), 
-            m("span.ml3" + (show === "search" ? ".b" : ""), {
-                onclick: () => setShow("search")
-            }, "Search (" + searchResult.length + ")"),
-            m("span.ml3" + (show === "messages" ? ".b" : ""), {
-                onclick: () => setShow("messages")
-            }, "Messages (" + messages.length + ")"),
-        )
-    }
+function displayMainMenuView() {
+    return m("div.mb2.ml5",
+        m("span" + (show === "users" ? ".b" : ""), {
+            onclick: () => setShow("users" )
+        }, "Users (" + Object.keys(users).length + ")"), 
+        m("span.ml3" + (show === "search" ? ".b" : ""), {
+            onclick: () => setShow("search")
+        }, "Search (" + searchResult.length + ")"),
+        m("span.ml3" + (show === "messages" ? ".b" : ""), {
+            onclick: () => setShow("messages")
+        }, "Messages (" + messages.length + ")"),
+    )
 }
 
 function displayViewer() {
     return m("div", [
-        m(MainMenuView),
+        displayMainMenuView(),
         (show === "users") ? displayUsers() : [],
         (show === "search") ? displaySearch() : [],
         (show === "messages") ? displayMessages() : [],
@@ -387,15 +385,13 @@ function isEverythingLoaded() {
     return stats_messages && messages && stats_users && users
 }
 
-class LoadingProgressView {
-    view() {
-        return m("div",
-            m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
-            m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
-            m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
-            m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
-        )
-    }
+function displayLoadingProgressView() {
+    return m("div",
+        m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
+        m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
+        m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
+        m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
+    )
 }
 
 const GitterArchiveViewer = {
@@ -404,7 +400,7 @@ const GitterArchiveViewer = {
             m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
             isEverythingLoaded() 
                 ? [ displayViewer() ] 
-                : m(LoadingProgressView)
+                : displayLoadingProgressView()
         ])
     }
 }
