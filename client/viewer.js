@@ -394,15 +394,13 @@ function displayLoadingProgressView() {
     )
 }
 
-const GitterArchiveViewer = {
-    view: function() {
-        return m(".main", [
-            m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
-            isEverythingLoaded() 
-                ? [ displayViewer() ] 
-                : displayLoadingProgressView()
-        ])
-    }
+function displayGitterArchiveViewer() {
+    return m(".main", [
+        m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
+        isEverythingLoaded() 
+            ? [ displayViewer() ] 
+            : displayLoadingProgressView()
+    ])
 }
 
 async function startup() {
@@ -451,6 +449,6 @@ function updateUserRankAndPostCount() {
     })
 }
 
-m.mount(document.body, GitterArchiveViewer)
+m.mount(document.body, { view: displayGitterArchiveViewer })
 
 startup()
