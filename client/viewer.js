@@ -134,7 +134,7 @@ function jumpToUser(username) {
     saveStateToHash()
 }
 
-function displayMessagesForList(subset, includeUser) {
+function viewMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3.mt1", 
         { 
             key: message.id,
@@ -152,14 +152,14 @@ function displayMessagesForList(subset, includeUser) {
     ))
 }
 
-function displayMessagesForUser(username) {
+function viewMessagesForUser(username) {
     const result = []
     for (const message of messages) {
         if (message.username === username) {
             result.push(message)
         }
     }
-    return page(result)
+    return viewPage(result)
 }
 
 function headerClick(field) {
@@ -172,7 +172,7 @@ function headerClick(field) {
     saveStateToHash()
 }
 
-function displayUsers() {
+function viewUsers() {
     const sortedUsers = Object.keys(users)
     switch (sortBy) {
     case "id":
@@ -215,7 +215,7 @@ function displayUsers() {
                 " ",
                 m("span.dib.w3", user.postCount)
             ),
-            isSelected ? displayMessagesForUser(username) : []
+            isSelected ? viewMessagesForUser(username) : []
         )
     })
     const sortCharacter = m("span.b", sortReverse ? "▼" : "▲")
@@ -308,7 +308,7 @@ function choosePage(pageCount) {
     saveStateToHash()
 }
 
-function displayPager(result) {
+function viewPager(result) {
     const pageCount = Math.ceil(result.length / pageSize)
     return m("div.ml5",
         (result.length > pageSize)
@@ -323,16 +323,16 @@ function displayPager(result) {
     )
 }
 
-function page(result, includeUser) {
+function viewPage(result, includeUser) {
     const pageResult = result.slice(getResultPage() * pageSize, getResultPage() * pageSize + pageSize)
     return m("div", [
-        displayPager(result),
-        displayMessagesForList(pageResult, includeUser),
-        displayPager(result)
+        viewPager(result),
+        viewMessagesForList(pageResult, includeUser),
+        viewPager(result)
     ])
 }
 
-function displaySearch() {
+function viewSearch() {
     return m("div.ml2", [
         "Search (regex, case-insensitive):", m("input.ml1", {
             value: searchString,
@@ -343,13 +343,13 @@ function displaySearch() {
         m("span.ml2", "# matches: " + searchResult.length),
         m("br"),
         regexError ? m("div.red", regexError) : [],
-        page(searchResult, "includeUser")
+        viewPage(searchResult, "includeUser")
     ])
 }
 
-function displayMessages() {
+function viewMessages() {
     return m("div.ml2", [
-        page(messages, "includeUser")
+        viewPage(messages, "includeUser")
     ])
 }
 
@@ -358,7 +358,7 @@ function setShow(value) {
     saveStateToHash()
 }
 
-function displayMainMenuView() {
+function viewMainMenu() {
     return m("div.mb2.ml5",
         m("span" + (show === "users" ? ".b" : ""), {
             onclick: () => setShow("users" )
@@ -372,12 +372,12 @@ function displayMainMenuView() {
     )
 }
 
-function displayViewer() {
+function viewMain() {
     return m("div", [
-        displayMainMenuView(),
-        (show === "users") ? displayUsers() : [],
-        (show === "search") ? displaySearch() : [],
-        (show === "messages") ? displayMessages() : [],
+        viewMainMenu(),
+        (show === "users") ? viewUsers() : [],
+        (show === "search") ? viewSearch() : [],
+        (show === "messages") ? viewMessages() : [],
     ])
 }
 
@@ -385,7 +385,7 @@ function isEverythingLoaded() {
     return stats_messages && messages && stats_users && users
 }
 
-function displayLoadingProgressView() {
+function viewLoadingProgress() {
     return m("div",
         m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
         m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
@@ -394,12 +394,12 @@ function displayLoadingProgressView() {
     )
 }
 
-function displayGitterArchiveViewer() {
+function viewGitterArchive() {
     return m(".main", [
         m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
         isEverythingLoaded() 
-            ? [ displayViewer() ] 
-            : displayLoadingProgressView()
+            ? [ viewMain() ] 
+            : viewLoadingProgress()
     ])
 }
 
@@ -449,6 +449,6 @@ function updateUserRankAndPostCount() {
     })
 }
 
-m.mount(document.body, { view: displayGitterArchiveViewer })
+m.mount(document.body, { view: viewGitterArchive })
 
 startup()
