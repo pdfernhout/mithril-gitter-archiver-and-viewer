@@ -58,7 +58,6 @@ function respondWithFileContents(response, sha256, filePath, url, contentType, n
 
 const boostrapFiles = {
     "bootstrap.html": "text/html",
-    "HashUtils.js": "application/javascript",
     "viewer.html": "text/html",
     "viewer.js": "application/javascript",
     "mithril.v1.1.6.js": "application/javascript",

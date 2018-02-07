@@ -1,8 +1,6 @@
 "use strict"
 /* global m */
 
-import HashUtils from "./HashUtils.js"
-
 // Processed data to display
 let stats_messages = "Loading..."
 let stats_users = "Loading..."
@@ -20,6 +18,7 @@ let userResultPage = 0
 
 // Search view
 let searchString = ""
+let searchStringEdited = ""
 let lastSearchString = ""
 let searchResult = []
 let searchResultPage = 0
@@ -58,11 +57,8 @@ v is version of user info
 gv is gravatar version (for cache busting)
 */
 
-// Track the hash
-
 function saveStateToHash() {
-    // This will trigger a loadStateFromHash each time it is called
-    const hashParams = HashUtils.getHashParams()
+    const hashParams = {}
     Object.assign(hashParams, {
         show,
         currentUsername,
@@ -74,14 +70,22 @@ function saveStateToHash() {
         selectedMessage: selectedMessage ? selectedMessage.id : "",
         messageResultPage
     })
-    HashUtils.setHashParams(hashParams, "ignoreFalsey")
+
+    const truthyParams = {}
+    for (const key of Object.keys(hashParams)) {
+        const value = hashParams[key]
+        if (value) truthyParams[key] = value
+    }
+
+    m.route.set("/", truthyParams)
 }
 
 function valueOrDefault(value, theDefault, type) {
     // assume the value if always a string
     if (value) {
         if (type === "number") return parseInt(value)
-        if (type === "boolean") return value === "true"
+        // Mithril routing parses true/false strings
+        if (type === "boolean") return value
         if (type === "message") {
             // Inefficient to loop every time
             for (let message of messages) {
@@ -94,8 +98,7 @@ function valueOrDefault(value, theDefault, type) {
     return theDefault
 }
 
-function loadStateFromHash() {
-    const hashParams = HashUtils.getHashParams()
+function loadStateFromHash(hashParams) {
 
     show = valueOrDefault(hashParams.show, "users")
     currentUsername = valueOrDefault(hashParams.currentUsername, "")
@@ -107,13 +110,15 @@ function loadStateFromHash() {
     selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
     messageResultPage = valueOrDefault(hashParams.messageResultPage, 0, "number")
 
+    // Does not preserve unknown params
+
     // TODO: determine messageResultPage for a message if the page is not specified
 
-    if (searchString && searchString !== lastSearchString) search()
-    m.redraw()
+    if (searchString && lastSearchString !== searchString) {
+        searchStringEdited = searchString
+        search()
+    }
 }
-
-// End track the hash section
 
 function jumpToMessage(message) {
     if (selectedMessage === message) {
@@ -237,7 +242,7 @@ function viewUsers() {
 function onSearchInputKeyDown(event) {
     if (event.keyCode === 13) {
         event.preventDefault()
-        searchString = event.target.value
+        searchStringEdited = event.target.value
         searchButtonClicked()
     } else {
         event.redraw = false
@@ -246,6 +251,7 @@ function onSearchInputKeyDown(event) {
 
 function searchButtonClicked() {
     searchResultPage = 0
+    searchString = searchStringEdited
     saveStateToHash()
 }
 
@@ -335,8 +341,8 @@ function viewPage(result, includeUser) {
 function viewSearch() {
     return m("div.ml2", [
         "Search (regex, case-insensitive):", m("input.ml1", {
-            value: searchString,
-            onchange: (event) => searchString = event.target.value,
+            value: searchStringEdited,
+            onchange: (event) => searchStringEdited = event.target.value,
             onkeydown: (event) => onSearchInputKeyDown(event)
         }),
         m("button.ml2", { onclick: () => searchButtonClicked() }, "Search"),
@@ -430,10 +436,6 @@ async function startup() {
     updateUserRankAndPostCount()
 
     messages = await promiseForAllMessages
-
-    // set up hash tracking
-    window.onhashchange = () => loadStateFromHash()
-    loadStateFromHash()
 }
 
 function updateUserRankAndPostCount() {
@@ -449,6 +451,13 @@ function updateUserRankAndPostCount() {
     })
 }
 
-m.mount(document.body, { view: viewGitterArchive })
+m.route(document.body, "/", {
+    "/": {
+        view: () => {
+            if (isEverythingLoaded()) loadStateFromHash(m.route.param())
+            return viewGitterArchive()
+        }
+    }
+})
 
 startup()
