@@ -2,8 +2,9 @@
 /* global m */
 
 // Processed data to display
-let stats_messages = "Loading..."
-let stats_users = "Loading..."
+let stats_messages = null
+let stats_users = null
+let stats_words = null
 let users = null
 let messages = null
 
@@ -12,8 +13,8 @@ let show = "users"
 
 // User table view
 let currentUsername = null
-let sortBy = "id"
-let sortReverse = false
+let sortUsersBy = "id"
+let sortUsersReverse = false
 let userResultPage = 0
 
 // Search view
@@ -27,6 +28,12 @@ let regexError = null
 // Messages view
 let selectedMessage = null
 let messageResultPage = 0
+
+// Words view
+let currentWord = null
+let sortWordsBy = "alphabetical"
+let sortWordsReverse = false
+let wordResultPage = 0
 
 const pageSize = 1000
 
@@ -62,13 +69,16 @@ function saveStateToHash() {
     Object.assign(hashParams, {
         show,
         currentUsername,
-        sortBy,
-        sortReverse,
+        sortUsersBy,
+        sortUsersReverse,
         userResultPage,
+        sortWordsBy,
+        sortWordsReverse,
+        wordResultPage,
         searchString,
         searchResultPage,
         selectedMessage: selectedMessage ? selectedMessage.id : "",
-        messageResultPage
+        messageResultPage,
     })
 
     const truthyParams = {}
@@ -102,9 +112,12 @@ function loadStateFromHash(hashParams) {
 
     show = valueOrDefault(hashParams.show, "users")
     currentUsername = valueOrDefault(hashParams.currentUsername, "")
-    sortBy = valueOrDefault(hashParams.sortBy, "id")
-    sortReverse = valueOrDefault(hashParams.sortReverse, false, "boolean")
+    sortUsersBy = valueOrDefault(hashParams.sortUsersBy, "id")
+    sortUsersReverse = valueOrDefault(hashParams.sortUsersReverse, false, "boolean")
     userResultPage = valueOrDefault(hashParams.userResultPage, 0, "number")
+    sortWordsBy = valueOrDefault(hashParams.sortWordsBy, "alphabetical")
+    sortWordsReverse = valueOrDefault(hashParams.sortWordsReverse, false, "boolean")
+    wordResultPage = valueOrDefault(hashParams.wordResultPage, 0, "number")
     searchString = valueOrDefault(hashParams.searchString, "")
     searchResultPage = valueOrDefault(hashParams.searchResultPage, 0, "number")
     selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
@@ -157,6 +170,8 @@ function viewMessagesForList(subset, includeUser) {
     ))
 }
 
+// ----------------- users
+
 function viewMessagesForUser(username) {
     const result = []
     for (const message of messages) {
@@ -167,19 +182,19 @@ function viewMessagesForUser(username) {
     return viewPage(result)
 }
 
-function headerClick(field) {
+function usersHeaderClick(field) {
     currentUsername = null
-    if (sortBy === field) {
-        sortReverse = !sortReverse
+    if (sortUsersBy === field) {
+        sortUsersReverse = !sortUsersReverse
     } else {
-        sortBy = field
+        sortUsersBy = field
     }
     saveStateToHash()
 }
 
 function viewUsers() {
     const sortedUsers = Object.keys(users)
-    switch (sortBy) {
+    switch (sortUsersBy) {
     case "id":
         sortedUsers.sort()
         break
@@ -193,9 +208,9 @@ function viewUsers() {
         sortedUsers.sort((a, b) => users[a].postCount - users[b].postCount)
         break
     default:
-        throw new Error("unexpected sort case")
+        throw new Error("unexpected username sort case: " + sortUsersBy)
     }
-    if (sortReverse) sortedUsers.reverse()
+    if (sortUsersReverse) sortedUsers.reverse()
     const table = sortedUsers.map(username => {
         const user = users[username]
         const isSelected = currentUsername === username
@@ -223,21 +238,140 @@ function viewUsers() {
             isSelected ? viewMessagesForUser(username) : []
         )
     })
-    const sortCharacter = m("span.b", sortReverse ? "▼" : "▲")
+    const sortCharacter = m("span.b", sortUsersReverse ? "▼" : "▲")
     // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
-            m("span.dib", { style: "width: 12rem", onclick: () => headerClick("id") }, "ID", ((sortBy === "id") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
             " ",
-            m("span.dib", { style: "width: 12rem", onclick: () => headerClick("name") }, "Name", ((sortBy === "name") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("name") }, "Name", ((sortUsersBy === "name") ? sortCharacter : [])),
             " ",
-            m("span.dib.w3", { onclick: () => headerClick("rank") }, "Rank", ((sortBy === "rank") ? sortCharacter : [])),
+            m("span.dib.w3", { onclick: () => usersHeaderClick("rank") }, "Rank", ((sortUsersBy === "rank") ? sortCharacter : [])),
             " ",
-            m("span.dib.w3", { onclick: () => headerClick("posts") }, "# Posts", ((sortBy === "posts") ? sortCharacter : []))
+            m("span.dib.w3", { onclick: () => usersHeaderClick("posts") }, "# Posts", ((sortUsersBy === "posts") ? sortCharacter : []))
         )
     )
     return [header, table]
 }
+
+// ----------------- words
+
+function viewMessagesForWord(matchingMessages) {
+    return viewPage(matchingMessages, "includeUser")
+}
+
+function wordsHeaderClick(field) {
+    currentWord = null
+    if (sortWordsBy === field) {
+        sortWordsReverse = !sortWordsReverse
+    } else {
+        sortWordsBy = field
+    }
+    saveStateToHash()
+}
+
+function limitLength(word, limit) {
+    if (word.length < limit) return word
+    return word.substring(0, limit - 3) + "..."
+}
+
+function viewWords() {
+    // Optimize so not sorting every redraw
+    const sortedWords = stats_words
+    switch (sortWordsBy) {
+    case "alphabetical":
+        stats_words.sort(sortByWord)
+        break
+    case "frequency":
+        stats_words.sort(sortByFrequencyAndWord)
+        break
+    default:
+        throw new Error("unexpected word sort case: " + sortWordsBy)
+    }
+    if (sortWordsReverse) sortedWords.reverse()
+    const table = sortedWords.map(item => {
+        const word = item.word
+        const frequency = item.count
+        const isSelected = currentWord === word
+        return m("div.ml2",
+            {
+                key: word,
+                oncreate: (currentWord === word) ? (vnode) => vnode.dom.scrollIntoView() : undefined
+            },
+            m("span" + (isSelected ? ".b" : ""), 
+                {
+                    onclick: () => {
+                        currentWord === word ? currentWord = null : currentWord = word
+                        wordResultPage = 0
+                        saveStateToHash()
+                    }
+                },
+                m("span.dib", { style: "width: 32rem" }, limitLength(word, 60)),
+                " ",
+                m("span.i.dib", { style: "width: 12rem" }, frequency),
+            ),
+            isSelected ? viewMessagesForWord(item.matchingMessages) : []
+        )
+    })
+    const sortCharacter = m("span.b", sortWordsReverse ? "▼" : "▲")
+    // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
+    const header = m("div.ml2", { key: " HEADER " },
+        m("span", 
+            m("span.dib", { style: "width: 32rem", onclick: () => wordsHeaderClick("alphabetical") }, "Word", ((sortWordsBy === "alphabetical") ? sortCharacter : [])),
+            " ",
+            m("span.dib", { style: "width: 12rem", onclick: () => wordsHeaderClick("frequency") }, "Count", ((sortWordsBy === "frequency") ? sortCharacter : [])),
+        )
+    )
+    return [header, table]
+}
+
+
+function sortByFrequencyAndWord(a, b) {
+    if (a.count !== b.count) return b.count - a.count
+    if (a.word < b.word) return -1
+    if (a.word > b.word) return 1
+    return 0
+}
+
+function sortByWord(a, b) {
+    if (a.word < b.word) return -1
+    if (a.word > b.word) return 1
+    return 0
+}
+
+function processWordStats() {
+    const stats = {}
+    for (let message of messages) {
+        // Not removed: - _
+        const re = /[\t\n\r(.,/\\#!$%^&*;:{}=`'~()<>?"[\]‘’“”…]/g
+        // re = /[^a-z]/g
+        const words = message.text.toLowerCase().replace(re, " ").split(/(\s+)/)
+        for (let word of words) {
+            word = word.trim()
+            if (!word) continue
+            // Use a prefix w: on the words because the word might be __proto__ or constructor
+            word = "w:" + word
+            if (!stats[word]) stats[word] = []
+            stats[word].push(message)
+        }
+    }
+
+    stats_words = []
+    for (let key in stats) {
+        // Remove the prefix with substring when storing the actual word
+        stats_words.push({word: key.substring(2), count: stats[key].length, matchingMessages: stats[key]})
+    }
+
+    /*
+    if (true) {
+        stats_words.sort(sortByWord)
+    } else {
+        stats_words.sort(sortByFrequencyAndWord)
+    }
+    */
+}
+
+// ----------------- search
 
 function onSearchInputKeyDown(event) {
     if (event.keyCode === 13) {
@@ -287,6 +421,9 @@ function setResultPage(value) {
     case "messages":
         messageResultPage = value
         break
+    case "words":
+        wordResultPage = value
+        break
     default:
         throw new Error("setResultPage: unexpected case: " + show)
     }
@@ -301,6 +438,8 @@ function getResultPage() {
         return searchResultPage
     case "messages":
         return messageResultPage
+    case "words":
+        return wordResultPage
     default:
         throw new Error("getResultPage: unexpected case: " + show)
     }
@@ -353,11 +492,15 @@ function viewSearch() {
     ])
 }
 
+// ----------------- messages
+
 function viewMessages() {
     return m("div.ml2", [
         viewPage(messages, "includeUser")
     ])
 }
+
+// ----------------- main
 
 function setShow(value) {
     show = value
@@ -375,6 +518,9 @@ function viewMainMenu() {
         m("span.ml3" + (show === "messages" ? ".b" : ""), {
             onclick: () => setShow("messages")
         }, "Messages (" + messages.length + ")"),
+        m("span.ml3" + (show === "words" ? ".b" : ""), {
+            onclick: () => setShow("words")
+        }, "Words (" + stats_words.length + ")"),
     )
 }
 
@@ -384,17 +530,19 @@ function viewMain() {
         (show === "users") ? viewUsers() : [],
         (show === "search") ? viewSearch() : [],
         (show === "messages") ? viewMessages() : [],
+        (show === "words") ? viewWords() : [],
     ])
 }
 
 function isEverythingLoaded() {
-    return stats_messages && messages && stats_users && users
+    return stats_messages && messages && stats_users && users && stats_words
 }
 
 function viewLoadingProgress() {
     return m("div",
         m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
         m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
+        m("div", "stats_words: ", stats_words ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
     )
@@ -436,6 +584,15 @@ async function startup() {
     updateUserRankAndPostCount()
 
     messages = await promiseForAllMessages
+
+    console.log("loaded messages")
+    m.redraw()
+
+    setTimeout(() => {
+        processWordStats()
+        console.log("processed word stats")
+        m.redraw()
+    }, 0)
 }
 
 function updateUserRankAndPostCount() {
