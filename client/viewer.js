@@ -256,10 +256,6 @@ function viewUsers() {
 
 // ----------------- words
 
-function viewMessagesForWord(matchingMessages) {
-    return viewPage(matchingMessages, "includeUser")
-}
-
 function wordsHeaderClick(field) {
     currentWord = null
     if (sortWordsBy === field) {
@@ -275,12 +271,26 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
+let pageY = 0
+let tableHeight = 400
+
+/*
+window.addEventListener("scroll", function(e) {
+    pageY = Math.max(e.pageY || window.pageYOffset, 0)
+    // pageHeight = 400 // window.innerHeight
+    m.redraw()
+})
+*/
+
 function viewWords() {
     // Optimize so not sorting every redraw
     const sortedWords = stats_words
     switch (sortWordsBy) {
     case "alphabetical":
         stats_words.sort(sortByWord)
+        break
+    case "rank":
+        stats_words.sort(sortByFrequencyAndWord)
         break
     case "frequency":
         stats_words.sort(sortByFrequencyAndWord)
@@ -289,8 +299,16 @@ function viewWords() {
         throw new Error("unexpected word sort case: " + sortWordsBy)
     }
     if (sortWordsReverse) sortedWords.reverse()
-    const table = sortedWords.map(item => {
+    const heightPerItem = 18
+    let visibleItemCount = Math.round(tableHeight / heightPerItem)
+    const visibleHeight = visibleItemCount * heightPerItem
+    const totalHeight = sortedWords.length * heightPerItem
+    let start = Math.round(pageY / heightPerItem)
+    let end = start + visibleItemCount
+    // console.log("pageY", pageY, start, end)
+    const table = sortedWords.slice(start, end).map(item => {
         const word = item.word
+        const rank = item.rank
         const frequency = item.count
         const isSelected = currentWord === word
         return m("div.ml2",
@@ -302,15 +320,19 @@ function viewWords() {
                 {
                     onclick: () => {
                         currentWord === word ? currentWord = null : currentWord = word
-                        wordResultPage = 0
+                        if (currentWord) {
+                            show = "search"
+                            searchString = "\\W" + word + "\\W"
+                        }
                         saveStateToHash()
                     }
                 },
                 m("span.dib", { style: "width: 32rem" }, limitLength(word, 60)),
                 " ",
-                m("span.i.dib", { style: "width: 12rem" }, frequency),
+                m("span.i.dib", { style: "width: 6rem" }, rank),
+                " ",                " ",
+                m("span.i.dib", { style: "width: 6rem" }, frequency),
             ),
-            isSelected ? viewMessagesForWord(item.matchingMessages) : []
         )
     })
     const sortCharacter = m("span.b", sortWordsReverse ? "▼" : "▲")
@@ -319,12 +341,50 @@ function viewWords() {
         m("span", 
             m("span.dib", { style: "width: 32rem", onclick: () => wordsHeaderClick("alphabetical") }, "Word", ((sortWordsBy === "alphabetical") ? sortCharacter : [])),
             " ",
-            m("span.dib", { style: "width: 12rem", onclick: () => wordsHeaderClick("frequency") }, "Count", ((sortWordsBy === "frequency") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 6rem", onclick: () => wordsHeaderClick("rank") }, "Rank", ((sortWordsBy === "rank") ? sortCharacter : [])),
+            " ",
+            m("span.dib", { style: "width: 6rem", onclick: () => wordsHeaderClick("frequency") }, "Count", ((sortWordsBy === "frequency") ? sortCharacter : [])),
         )
     )
-    return [header, table]
-}
 
+    const offset = pageY // pageY % heightPerItem
+
+    const wrappedTable = m("div.ba",
+        {
+            style: {
+                height: visibleHeight + "px",
+                position: "relative",
+                // top: -offset + "px",
+                "overflow-y": "scroll",
+            },
+            onscroll: (event) => {
+                // console.log("onscroll", event, event.target.scrollTop)
+                // pageY = Math.max(event.pageY || window.pageYOffset, 0)
+                pageY = event.target.scrollTop
+                tableHeight = event.target.offsetHeight
+            }
+        },
+        m("div", 
+            {
+                style: {
+                    // top: pageY + "px",
+                    height: totalHeight + "px",
+                }
+            },
+            m("div",
+                {
+                    style: {
+                        position: "absolute"  ,
+                        top: offset + "px", 
+                    }
+                },
+                table
+            )
+        )
+    )
+    
+    return [header, wrappedTable]
+}
 
 function sortByFrequencyAndWord(a, b) {
     if (a.count !== b.count) return b.count - a.count
@@ -362,13 +422,12 @@ function processWordStats() {
         stats_words.push({word: key.substring(2), count: stats[key].length, matchingMessages: stats[key]})
     }
 
-    /*
-    if (true) {
-        stats_words.sort(sortByWord)
-    } else {
-        stats_words.sort(sortByFrequencyAndWord)
+    stats_words.sort(sortByFrequencyAndWord)
+
+    // assign ranks based on frequency
+    for (let i = 0; i < stats_words.length; i++) {
+        stats_words[i].rank = i + 1
     }
-    */
 }
 
 // ----------------- search
