@@ -271,16 +271,8 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
-let pageY = 0
+let wordsScrollY = 0
 let tableHeight = 400
-
-/*
-window.addEventListener("scroll", function(e) {
-    pageY = Math.max(e.pageY || window.pageYOffset, 0)
-    // pageHeight = 400 // window.innerHeight
-    m.redraw()
-})
-*/
 
 function viewWords() {
     // Optimize so not sorting every redraw
@@ -303,7 +295,7 @@ function viewWords() {
     let visibleItemCount = Math.round(tableHeight / heightPerItem)
     const visibleHeight = visibleItemCount * heightPerItem
     const totalHeight = sortedWords.length * heightPerItem
-    let start = Math.round(pageY / heightPerItem)
+    let start = Math.round(wordsScrollY / heightPerItem)
     let end = start + visibleItemCount
     const table = sortedWords.slice(start, end).map(item => {
         const word = item.word
@@ -348,21 +340,20 @@ function viewWords() {
 
     const wrappedTable = m("div.ba",
         {
-            oncreate: (vnode) => vnode.dom.scrollTop = pageY,
+            oncreate: (vnode) => vnode.dom.scrollTop = wordsScrollY,
             style: {
                 height: visibleHeight + "px",
                 position: "relative",
                 "overflow-y": "scroll",
             },
             onscroll: (event) => {
-                pageY = event.target.scrollTop
+                wordsScrollY = event.target.scrollTop
                 tableHeight = event.target.offsetHeight
             }
         },
         m("div", 
             {
                 style: {
-                    // top: pageY + "px",
                     height: totalHeight + "px",
                 }
             },
@@ -370,7 +361,7 @@ function viewWords() {
                 {
                     style: {
                         position: "absolute"  ,
-                        top: pageY + "px", 
+                        top: wordsScrollY + "px", 
                     }
                 },
                 table
