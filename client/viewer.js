@@ -305,7 +305,6 @@ function viewWords() {
     const totalHeight = sortedWords.length * heightPerItem
     let start = Math.round(pageY / heightPerItem)
     let end = start + visibleItemCount
-    // console.log("pageY", pageY, start, end)
     const table = sortedWords.slice(start, end).map(item => {
         const word = item.word
         const rank = item.rank
@@ -347,19 +346,15 @@ function viewWords() {
         )
     )
 
-    const offset = pageY // pageY % heightPerItem
-
     const wrappedTable = m("div.ba",
         {
+            oncreate: (vnode) => vnode.dom.scrollTop = pageY,
             style: {
                 height: visibleHeight + "px",
                 position: "relative",
-                // top: -offset + "px",
                 "overflow-y": "scroll",
             },
             onscroll: (event) => {
-                // console.log("onscroll", event, event.target.scrollTop)
-                // pageY = Math.max(event.pageY || window.pageYOffset, 0)
                 pageY = event.target.scrollTop
                 tableHeight = event.target.offsetHeight
             }
@@ -375,7 +370,7 @@ function viewWords() {
                 {
                     style: {
                         position: "absolute"  ,
-                        top: offset + "px", 
+                        top: pageY + "px", 
                     }
                 },
                 table
