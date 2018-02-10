@@ -33,7 +33,8 @@ let messageResultPage = 0
 let currentWord = null
 let sortWordsBy = "alphabetical"
 let sortWordsReverse = false
-let wordResultPage = 0
+let wordsScrollY = 0
+let wordsTableHeight = 400
 
 const pageSize = 1000
 
@@ -74,7 +75,8 @@ function saveStateToHash() {
         userResultPage,
         sortWordsBy,
         sortWordsReverse,
-        wordResultPage,
+        currentWord,
+        wordsScrollY,
         searchString,
         searchResultPage,
         selectedMessage: selectedMessage ? selectedMessage.id : "",
@@ -117,7 +119,8 @@ function loadStateFromHash(hashParams) {
     userResultPage = valueOrDefault(hashParams.userResultPage, 0, "number")
     sortWordsBy = valueOrDefault(hashParams.sortWordsBy, "alphabetical")
     sortWordsReverse = valueOrDefault(hashParams.sortWordsReverse, false, "boolean")
-    wordResultPage = valueOrDefault(hashParams.wordResultPage, 0, "number")
+    currentWord = valueOrDefault(hashParams.currentWord, "")
+    wordsScrollY = valueOrDefault(hashParams.wordsScrollY, 0, "number")
     searchString = valueOrDefault(hashParams.searchString, "")
     searchResultPage = valueOrDefault(hashParams.searchResultPage, 0, "number")
     selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
@@ -271,8 +274,7 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
-let wordsScrollY = 0
-let tableHeight = 400
+const heightPerItem = 18
 
 function viewWords() {
     // Optimize so not sorting every redraw
@@ -290,13 +292,30 @@ function viewWords() {
     default:
         throw new Error("unexpected word sort case: " + sortWordsBy)
     }
+
     if (sortWordsReverse) sortedWords.reverse()
-    const heightPerItem = 18
-    let visibleItemCount = Math.round(tableHeight / heightPerItem)
+
+    let visibleItemCount = Math.round(wordsTableHeight / heightPerItem)
     const visibleHeight = visibleItemCount * heightPerItem
     const totalHeight = sortedWords.length * heightPerItem
     let start = Math.round(wordsScrollY / heightPerItem)
     let end = start + visibleItemCount
+
+    /*
+    function calculateCurrentWordIndex() {
+        if (!currentWord) return 0
+        for (let i = 0; i < sortedWords.length; i++) {
+            if (sortedWords[i].word === currentWord) return i
+        }
+        console.log("Word not found", currentWord)
+        return 0
+    }
+
+    function calculateCurrentWordScrollY() {
+        return calculateCurrentWordIndex * heightPerItem
+    }
+    */
+
     const table = sortedWords.slice(start, end).map(item => {
         const word = item.word
         const rank = item.rank
@@ -304,18 +323,23 @@ function viewWords() {
         const isSelected = currentWord === word
         return m("div.ml2",
             {
+                style: {
+                    height: heightPerItem + "px",
+                },
                 key: word,
-                oncreate: (currentWord === word) ? (vnode) => vnode.dom.scrollIntoView() : undefined
             },
             m("span" + (isSelected ? ".b" : ""), 
                 {
                     onclick: () => {
                         currentWord === word ? currentWord = null : currentWord = word
+                        saveStateToHash()
                         if (currentWord) {
                             show = "search"
-                            searchString = "\\W" + word + "\\W"
+                            // searchString = "\\W" + word + "\\W"
+                            searchString = word
+                            saveStateToHash()
                         }
-                        saveStateToHash()
+                        
                     }
                 },
                 m("span.dib", { style: "width: 32rem" }, limitLength(word, 60)),
@@ -340,15 +364,14 @@ function viewWords() {
 
     const wrappedTable = m("div.ba",
         {
-            oncreate: (vnode) => vnode.dom.scrollTop = wordsScrollY,
+            oncreate: (vnode) => vnode.dom.scrollTop = wordsScrollY, // calculateCurrentWordScrollY(),
             style: {
                 height: visibleHeight + "px",
                 position: "relative",
                 "overflow-y": "scroll",
             },
             onscroll: (event) => {
-                wordsScrollY = event.target.scrollTop
-                tableHeight = event.target.offsetHeight
+                wordsScrollY = Math.round(event.target.scrollTop)
             }
         },
         m("div", 
@@ -466,9 +489,6 @@ function setResultPage(value) {
     case "messages":
         messageResultPage = value
         break
-    case "words":
-        wordResultPage = value
-        break
     default:
         throw new Error("setResultPage: unexpected case: " + show)
     }
@@ -483,8 +503,6 @@ function getResultPage() {
         return searchResultPage
     case "messages":
         return messageResultPage
-    case "words":
-        return wordResultPage
     default:
         throw new Error("getResultPage: unexpected case: " + show)
     }
@@ -636,6 +654,7 @@ async function startup() {
     setTimeout(() => {
         processWordStats()
         console.log("processed word stats")
+        loadStateFromHash(m.route.param())
         m.redraw()
     }, 0)
 }
@@ -654,11 +673,12 @@ function updateUserRankAndPostCount() {
 }
 
 m.route(document.body, "/", {
-    "/": {
-        view: () => {
-            if (isEverythingLoaded()) loadStateFromHash(m.route.param())
-            return viewGitterArchive()
-        }
+    "/":
+    {
+        onmatch: (args) => {
+            if (isEverythingLoaded()) loadStateFromHash(args)
+        },
+        render: viewGitterArchive
     }
 })
 
