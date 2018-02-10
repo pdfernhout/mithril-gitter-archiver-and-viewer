@@ -336,7 +336,8 @@ function viewWords() {
                 style: {
                     height: heightPerItem + "px",
                 },
-                key: word,
+                // Ensure the key is not a value like __proto__ which causes internal errors in Mithril
+                key: "'" + word,
             },
             m("span" + (isSelected ? ".b" : ""), 
                 {
@@ -350,25 +351,33 @@ function viewWords() {
                             saveStateToHash()
                         }
                         
+                    },
+                    style: {
+                        "white-space": "nowrap"
                     }
                 },
-                m("span.dib", { style: "width: 32rem" }, limitLength(word, 60)),
-                " ",
-                m("span.i.dib", { style: "width: 6rem" }, rank),
+                m("span.i.dib", { style: "width: 5rem" }, rank),
                 " ",                " ",
-                m("span.i.dib", { style: "width: 6rem" }, frequency),
+                m("span.i.dib", { style: "width: 5rem" }, frequency),
+                " ",
+                m("span.dib", { style: "width: 32rem" }, limitLength(word, 60)),
             ),
         )
     })
     const sortCharacter = m("span.b", sortWordsReverse ? "▼" : "▲")
     // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
-    const header = m("div.ml2", { key: " HEADER " },
+    const header = m("div.ml2.mt1", { key: " HEADER " },
         m("span", 
+            {
+                style: {
+                    "white-space": "nowrap"
+                }
+            },
+            m("span.dib", { style: "width: 5rem", onclick: () => wordsHeaderClick("rank") }, "Rank", ((sortWordsBy === "rank") ? sortCharacter : [])),
+            " ",
+            m("span.dib", { style: "width: 5rem", onclick: () => wordsHeaderClick("frequency") }, "Count", ((sortWordsBy === "frequency") ? sortCharacter : [])),
+            " ",
             m("span.dib", { style: "width: 32rem", onclick: () => wordsHeaderClick("alphabetical") }, "Word", ((sortWordsBy === "alphabetical") ? sortCharacter : [])),
-            " ",
-            m("span.dib", { style: "width: 6rem", onclick: () => wordsHeaderClick("rank") }, "Rank", ((sortWordsBy === "rank") ? sortCharacter : [])),
-            " ",
-            m("span.dib", { style: "width: 6rem", onclick: () => wordsHeaderClick("frequency") }, "Count", ((sortWordsBy === "frequency") ? sortCharacter : [])),
         )
     )
 
