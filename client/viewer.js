@@ -364,7 +364,13 @@ function viewWords() {
 
     const wrappedTable = m("div.ba",
         {
-            oncreate: (vnode) => vnode.dom.scrollTop = wordsScrollY, // calculateCurrentWordScrollY(),
+            oncreate: (vnode) => {
+                vnode.dom.scrollTop = wordsScrollY // calculateCurrentWordScrollY(),
+                const rect = vnode.dom.getBoundingClientRect()
+                wordsTableHeight = window.innerHeight - rect.top
+                // TODO: This needs to be updated on a window resize
+                m.redraw()
+            },
             style: {
                 height: visibleHeight + "px",
                 position: "relative",
@@ -372,6 +378,8 @@ function viewWords() {
             },
             onscroll: (event) => {
                 wordsScrollY = Math.round(event.target.scrollTop)
+                const rect = event.target.getBoundingClientRect()
+                wordsTableHeight = window.innerHeight - rect.top
             }
         },
         m("div", 
@@ -392,7 +400,10 @@ function viewWords() {
         )
     )
     
-    return [header, wrappedTable]
+    return m("div", [
+        header,
+        wrappedTable,
+    ])
 }
 
 function sortByFrequencyAndWord(a, b) {
