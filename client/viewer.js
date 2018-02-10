@@ -276,9 +276,19 @@ function limitLength(word, limit) {
 
 const heightPerItem = 18
 
+let wordFilter = ""
+let wordRegexError = null
+
 function viewWords() {
     // Optimize so not sorting every redraw
-    const sortedWords = stats_words
+    let re
+    try {
+        re = new RegExp(wordFilter, "i")
+    } catch (e) {
+        re = null
+        wordRegexError = e.message
+    }
+    const sortedWords = re ? stats_words.filter(item => !wordFilter || re.test(item.word)) : []
     switch (sortWordsBy) {
     case "alphabetical":
         stats_words.sort(sortByWord)
@@ -336,7 +346,7 @@ function viewWords() {
                         if (currentWord) {
                             show = "search"
                             // searchString = "\\W" + word + "\\W"
-                            searchString = word
+                            searchString = word.replace(/\+/gi, "\\+")
                             saveStateToHash()
                         }
                         
@@ -371,6 +381,7 @@ function viewWords() {
                 // TODO: This needs to be updated on a window resize
                 m.redraw()
             },
+            id: "wrapped-table",
             style: {
                 height: visibleHeight + "px",
                 position: "relative",
@@ -401,6 +412,20 @@ function viewWords() {
     )
     
     return m("div", [
+        "Filter (regex, case-insensitive):",
+        m("input.ml1", {
+            value: wordFilter,
+            onchange: (event) => {
+                wordFilter = event.target.value
+                wordsScrollY = 0
+                document.getElementById("wrapped-table").scrollTop = 0 
+            },
+            // onkeydown: (event) => onWordFilterInputKeyDown(event)
+        }),
+        m("button.ml2", { onclick: () => /* wordFilterButtonClicked() */ {} }, "Filter"),
+        m("span.ml2", "# matches: " + sortedWords.length),
+        m("br"),
+        wordRegexError ? m("div.red", wordRegexError) : [],
         header,
         wrappedTable,
     ])
