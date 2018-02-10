@@ -65,6 +65,7 @@ const boostrapFiles = {
 
     "allMessages.json": "application/json",
     "allUsers.json": "application/json",
+    "Bootstrap2.mbox": "text/plain",
 }
 
 const apiPathForBootstrap = "/"

@@ -172,7 +172,8 @@ function viewMessagesForList(subset, includeUser) {
                 onclick: () => jumpToUser(message.username)
             }, message.username)]
             : [],
-        m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, message.text)
+        m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, 
+            (selectedMessage === message) ? message.text : message.title || message.text)
     ))
 }
 
@@ -233,9 +234,9 @@ function viewUsers() {
                         saveStateToHash()
                     }
                 },
-                m("span.dib", { style: "width: 12rem" }, user.username),
+                m("span.dib", { style: "width: 15rem" }, user.username),
                 " ",
-                m("span.i.dib", { style: "width: 12rem" }, user.displayName),
+                m("span.i.dib", { style: "width: 15rem" }, user.displayName),
                 " ",
                 m("span.dib.w3", user.rank),
                 " ",
@@ -248,9 +249,9 @@ function viewUsers() {
     // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
-            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 15rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
             " ",
-            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("name") }, "Name", ((sortUsersBy === "name") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 15rem", onclick: () => usersHeaderClick("name") }, "Name", ((sortUsersBy === "name") ? sortCharacter : [])),
             " ",
             m("span.dib.w3", { onclick: () => usersHeaderClick("rank") }, "Rank", ((sortUsersBy === "rank") ? sortCharacter : [])),
             " ",
@@ -662,7 +663,7 @@ function viewMain() {
 }
 
 function isEverythingLoaded() {
-    return messages && users
+    return messages !== null && users !== null
 }
 
 function viewLoadingProgress() {
@@ -681,30 +682,121 @@ function viewGitterArchive() {
     ])
 }
 
+const archiveType = "email"
+
 async function startup() {
 
-    users = await m.request({
-        method: "GET",
-        url: "data/allUsers.json"
-    })
+    if (archiveType === "gitter") {
+        users = await m.request({
+            method: "GET",
+            url: "data/allUsers.json"
+        })
 
-    // await on this later so we can process the user data while we are waiting
-    const promiseForAllMessages = m.request({
-        method: "GET",
-        url: "data/allMessages.json"
-    })
+        messages = await m.request({
+            method: "GET",
+            url: "data/allMessages.json"
+        })
+    } else if (archiveType === "email") {
+        const email = await m.request({
+            method: "GET",
+            url: "data/Bootstrap2.mbox",
+            deserialize: text => text
+        })
 
-    messages = await promiseForAllMessages
+        processEmail(email)
+    }
 
     updateUserRankAndPostCount()
-
-    m.redraw()
-
+ 
     setTimeout(() => {
         processWordStats(0)
     }, 0)
 
     loadStateFromHash(m.route.param())
+    m.redraw()
+}
+
+function processEmail(email) {
+    messages = []
+    users = {}
+    const emails = email.split(/^From /m)
+    let unknownIndex = 1
+    for (let email of emails) {
+        if (!email || email === " ") continue
+        // email = email.replace(/^>From /m, "From ")
+        email = "From " + email
+        const subject = email.match(/^Subject: ([^\n]*)/m)
+        const title = subject ? subject[1] : ""
+        const fromMatch = email.match(/^From: ([^\n]*)/m)
+        const from = fromMatch ? fromMatch[1]: "UNKNOWN"
+        const idMatch = email.match(/^Message-Id: ([^\n]*)/m)
+        const id = idMatch ? idMatch[1]: "UNKNOWN:" + unknownIndex++
+        const dateMatch = email.match(/^Date: ([^\n]*)/m)
+        const dateLong = dateMatch ? dateMatch[1]: "UNKNOWN"
+        const date = new Date(dateLong).toISOString()
+
+        let username
+        let displayName
+        if (from.includes("<")) {
+            const emailAddressMatch = from.match(/(.*)<([^>]*)>/)
+            displayName = emailAddressMatch ? emailAddressMatch[1] : ""
+            username = emailAddressMatch ? emailAddressMatch[2] : from
+            displayName = displayName.replace(/"/gi, "")
+        } else {
+            username = from
+            displayName = ""
+        }
+        username = username.trim()
+        displayName = displayName.trim()
+
+        const isoMatch = email.match(/=\?iso-8859-1\?q\?([^?]*)/)
+        if (isoMatch) {
+            displayName = isoMatch[1].replace("=20", " ")
+        }
+
+        if (username.includes("(")) {
+            const parenUserName = username
+            username = parenUserName.split("(")[0].trim()
+            displayName = parenUserName.split("(")[1].split(")")[0].trim()
+        }
+
+        username = username.toLowerCase()
+
+        const message = {
+            id,
+            sent: date,
+            username,
+            text: email,
+            title
+        }
+        if (users[username]) {
+            //if (users[username].displayName === username) {
+            //    users[username].displayName = displayName || username
+            //}
+            const previousDisplayName = users[username].displayName
+            if (previousDisplayName !== displayName) {
+                console.log("multiple names for user", username, previousDisplayName, displayName)
+                // pick the longest
+                if (!displayName.includes("(") && displayName.length >= previousDisplayName.length) {
+                    users[username].displayName = displayName
+                }
+            }
+        }
+        else {
+            users[username] = {
+                username,
+                displayName: displayName
+            }
+        }
+        messages.push(message)
+    }
+    
+    // Ensure all users have a displayName
+    for (let username of Object.keys(users)) {
+        const user = users[username]
+        const name = user.username.split("@")[0]
+        if (!user.displayName) user.displayName = name
+    }
 }
 
 function updateUserRankAndPostCount() {
