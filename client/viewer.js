@@ -280,6 +280,8 @@ function limitLength(word, limit) {
 }
 
 function viewWords() {
+    if (!stats_words) return m("div", "Still processing word statistics -- please wait...")
+
     // Optimize so not sorting every redraw
     let re
     try {
@@ -454,9 +456,18 @@ function sortByWord(a, b) {
     return 0
 }
 
-function processWordStats() {
-    const stats = {}
-    for (let message of messages) {
+const processingPerIteration = 1000
+const accumulated_stats = {}
+let current_stats_index = "..."
+
+// This function incrementally processes some stats and then schedules itself with timeout
+// This is to keep UI responsive during an operation that may take several seconds
+function processWordStats(index) {
+    current_stats_index = Math.floor((messages.length - index) / processingPerIteration) 
+
+    for (let i = index; (i < messages.length && i < index + processingPerIteration); i++) {
+        // Spilt the message into words and add the results to stats
+        const message = messages[i]
         // Not removed: - _
         const re = /[\t\n\r(.,/\\#!$%^&*;:{}=`'~()<>?"[\]‘’“”…]/g
         // re = /[^a-z]/g
@@ -466,23 +477,32 @@ function processWordStats() {
             if (!word) continue
             // Use a prefix w: on the words because the word might be __proto__ or constructor
             word = "w:" + word
-            if (!stats[word]) stats[word] = []
-            stats[word].push(message)
+            if (!accumulated_stats[word]) accumulated_stats[word] = []
+            accumulated_stats[word].push(message)
         }
     }
 
-    stats_words = []
-    for (let key in stats) {
-        // Remove the prefix with substring when storing the actual word
-        stats_words.push({word: key.substring(2), count: stats[key].length, matchingMessages: stats[key]})
-    }
+    if (index + processingPerIteration >= messages.length) {
+        const words_table = []
+        for (let key in accumulated_stats) {
+            // Remove the prefix with substring when storing the actual word
+            words_table.push({word: key.substring(2), count: accumulated_stats[key].length, matchingMessages: accumulated_stats[key]})
+        }
 
-    stats_words.sort(sortByFrequencyAndWord)
+        words_table.sort(sortByFrequencyAndWord)
 
-    // assign ranks based on frequency
-    for (let i = 0; i < stats_words.length; i++) {
-        stats_words[i].rank = i + 1
+        // assign ranks based on frequency
+        for (let i = 0; i < words_table.length; i++) {
+            words_table[i].rank = i + 1
+        }
+
+        stats_words = words_table
+        // done
+    } else {
+        // loop until done
+        setTimeout(() => processWordStats(index + processingPerIteration), 0)
     }
+    m.redraw()
 }
 
 // ----------------- search
@@ -590,7 +610,7 @@ function viewSearch() {
     return m("div.ml2", [
         "Search (regex, case-insensitive):", m("input.ml1", {
             value: searchStringEdited,
-            onchange: (event) => searchStringEdited = event.target.value,
+            oninput: (event) => searchStringEdited = event.target.value,
             onkeydown: (event) => onSearchInputKeyDown(event)
         }),
         m("button.ml2", { onclick: () => searchButtonClicked() }, "Search"),
@@ -629,7 +649,7 @@ function viewMainMenu() {
         }, "Messages (" + messages.length + ")"),
         m("span.ml3" + (show === "words" ? ".b" : ""), {
             onclick: () => setShow("words")
-        }, "Words (" + stats_words.length + ")"),
+        }, "Words (" + (stats_words ? stats_words.length : "Wait:" + current_stats_index )+ ")"),
     )
 }
 
@@ -644,14 +664,13 @@ function viewMain() {
 }
 
 function isEverythingLoaded() {
-    return stats_messages && messages && stats_users && users && stats_words
+    return stats_messages && messages && stats_users && users
 }
 
 function viewLoadingProgress() {
     return m("div",
         m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
         m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
-        m("div", "stats_words: ", stats_words ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
     )
@@ -694,15 +713,13 @@ async function startup() {
 
     messages = await promiseForAllMessages
 
-    console.log("loaded messages")
     m.redraw()
 
     setTimeout(() => {
-        processWordStats()
-        console.log("processed word stats")
-        loadStateFromHash(m.route.param())
-        m.redraw()
+        processWordStats(0)
     }, 0)
+
+    loadStateFromHash(m.route.param())
 }
 
 function updateUserRankAndPostCount() {
