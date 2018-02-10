@@ -2,7 +2,6 @@
 /* global m */
 
 // Processed data to display
-let stats_messages = null
 let stats_users = null
 let stats_words = null
 let users = null
@@ -664,15 +663,14 @@ function viewMain() {
 }
 
 function isEverythingLoaded() {
-    return stats_messages && messages && stats_users && users
+    return messages && stats_users && users
 }
 
 function viewLoadingProgress() {
     return m("div",
-        m("div", "messages count: ", messages ? messages.length : m("span.yellow", "Loading...")),
-        m("div", "stats_messages: ", stats_messages ? stats_messages : m("span.yellow", "Loading...")),
         m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
-        m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading..."))
+        m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading...")),
+        m("div", "messages: ", messages ? messages.length : m("span.yellow", "Loading...")),
     )
 }
 
@@ -686,11 +684,6 @@ function viewGitterArchive() {
 }
 
 async function startup() {
-    stats_messages = await m.request({
-        method: "GET",
-        url: "data/stats/stats_messages.txt",
-        deserialize: text => text
-    })
 
     stats_users = await m.request({
         method: "GET",
