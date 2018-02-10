@@ -2,7 +2,6 @@
 /* global m */
 
 // Processed data to display
-let stats_users = null
 let stats_words = null
 let users = null
 let messages = null
@@ -663,12 +662,11 @@ function viewMain() {
 }
 
 function isEverythingLoaded() {
-    return messages && stats_users && users
+    return messages && users
 }
 
 function viewLoadingProgress() {
     return m("div",
-        m("div", "stats_users: ", stats_users ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "users: ", users ? "Loaded" : m("span.yellow", "Loading...")),
         m("div", "messages: ", messages ? messages.length : m("span.yellow", "Loading...")),
     )
@@ -685,12 +683,6 @@ function viewGitterArchive() {
 
 async function startup() {
 
-    stats_users = await m.request({
-        method: "GET",
-        url: "data/stats/stats_users.txt",
-        deserialize: text => text
-    })
-
     users = await m.request({
         method: "GET",
         url: "data/allUsers.json"
@@ -702,9 +694,9 @@ async function startup() {
         url: "data/allMessages.json"
     })
 
-    updateUserRankAndPostCount()
-
     messages = await promiseForAllMessages
+
+    updateUserRankAndPostCount()
 
     m.redraw()
 
@@ -716,16 +708,31 @@ async function startup() {
 }
 
 function updateUserRankAndPostCount() {
-    stats_users.split("\n").forEach(line => {
-        if (!line.trim()) return
-        const [ rank, username, postCount ] = line.split(" ")
+    for (let message of messages) {
+        const username = message.username
         const user = users[username]
         if (!user) {
             throw new Error("missing user for: " + username)
         }
-        user.rank = rank
-        user.postCount = postCount
+        user.postCount = (user.postCount || 0) + 1
+    }
+
+    // Ranks the users based on postCount and their username (if a tie)
+    const rankedUsers = []
+
+    for (let username of Object.keys(users)) {
+        rankedUsers.push(users[username])
+    }
+
+    rankedUsers.sort((a, b) => {
+        if (a.postCount !== b.postCount) return b.postCount - a.postCount
+        return a.username.localeCompare(b.username)
     })
+
+    for (let i = 0; i < rankedUsers.length; i++) {
+        const user = rankedUsers[i]
+        user.rank = i + 1
+    }
 }
 
 m.route(document.body, "/", {
