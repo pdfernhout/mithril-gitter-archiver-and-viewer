@@ -326,6 +326,8 @@ function viewWords() {
     }
     */
 
+    // Reuse the same DOM nodes as we scroll through the table by using the same index for the same row
+    let index = 0
     const table = sortedWords.slice(start, end).map(item => {
         const word = item.word
         const rank = item.rank
@@ -336,8 +338,7 @@ function viewWords() {
                 style: {
                     height: heightPerItem + "px",
                 },
-                // Ensure the key is not a value like __proto__ which causes internal errors in Mithril
-                key: "'" + word,
+                key: index++,
             },
             m("span" + (isSelected ? ".b" : ""), 
                 {
