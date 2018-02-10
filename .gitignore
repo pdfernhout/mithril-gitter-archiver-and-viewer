@@ -1,3 +1,2 @@
-stats_*
-allMessages.json
-allUsers.json
+!data/README_data.md
+data
