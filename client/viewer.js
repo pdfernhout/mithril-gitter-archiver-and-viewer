@@ -34,7 +34,10 @@ let currentWord = null
 let sortWordsBy = "alphabetical"
 let sortWordsReverse = false
 let wordsScrollY = 0
+let wordFilter = ""
+let wordRegexError = null
 let wordsTableHeight = 400
+const heightPerItem = 18
 
 const pageSize = 1000
 
@@ -77,6 +80,7 @@ function saveStateToHash() {
         sortWordsReverse,
         currentWord,
         wordsScrollY,
+        wordFilter,
         searchString,
         searchResultPage,
         selectedMessage: selectedMessage ? selectedMessage.id : "",
@@ -121,6 +125,7 @@ function loadStateFromHash(hashParams) {
     sortWordsReverse = valueOrDefault(hashParams.sortWordsReverse, false, "boolean")
     currentWord = valueOrDefault(hashParams.currentWord, "")
     wordsScrollY = valueOrDefault(hashParams.wordsScrollY, 0, "number")
+    wordFilter = valueOrDefault(hashParams.wordFilter, "")
     searchString = valueOrDefault(hashParams.searchString, "")
     searchResultPage = valueOrDefault(hashParams.searchResultPage, 0, "number")
     selectedMessage = valueOrDefault(hashParams.selectedMessage, null, "message")
@@ -274,11 +279,6 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
-const heightPerItem = 18
-
-let wordFilter = ""
-let wordRegexError = null
-
 function viewWords() {
     // Optimize so not sorting every redraw
     let re
@@ -419,8 +419,8 @@ function viewWords() {
                 wordFilter = event.target.value
                 wordsScrollY = 0
                 document.getElementById("wrapped-table").scrollTop = 0 
+                saveStateToHash()
             },
-            // onkeydown: (event) => onWordFilterInputKeyDown(event)
         }),
         m("button.ml2", { onclick: () => /* wordFilterButtonClicked() */ {} }, "Filter"),
         m("span.ml2", "# matches: " + sortedWords.length),
