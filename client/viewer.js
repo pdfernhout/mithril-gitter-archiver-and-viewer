@@ -311,10 +311,19 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
-function viewWords() {
-    if (!stats_words) return m("div", "Still processing word statistics -- please wait...")
+let sortedWordsCache = null
+let sortedWordsCacheState = {}
 
-    // Optimize so not sorting every redraw
+function sortWords() {
+    // Chaching ptimization so not sorting every redraw
+    if (sortedWordsCache
+        && sortedWordsCacheState.sortWordsBy === sortWordsBy
+        && sortedWordsCacheState.sortWordsReverse === sortWordsReverse
+        && sortedWordsCacheState.wordFilter === wordFilter
+    ) {
+        return sortedWordsCache
+    }
+
     let re
     try {
         re = new RegExp(wordFilter, "i")
@@ -322,22 +331,35 @@ function viewWords() {
         re = null
         wordRegexError = e.message
     }
-    const sortedWords = re ? stats_words.filter(item => !wordFilter || re.test(item.word)) : []
+    sortedWordsCache = re ? stats_words.filter(item => !wordFilter || re.test(item.word)) : []
     switch (sortWordsBy) {
     case "alphabetical":
-        stats_words.sort(sortByWord)
+        sortedWordsCache.sort(sortByWord)
         break
     case "rank":
-        stats_words.sort(sortByFrequencyAndWord)
+        sortedWordsCache.sort(sortByFrequencyAndWord)
         break
     case "frequency":
-        stats_words.sort(sortByFrequencyAndWord)
+        sortedWordsCache.sort(sortByFrequencyAndWord)
         break
     default:
         throw new Error("unexpected word sort case: " + sortWordsBy)
     }
 
-    if (sortWordsReverse) sortedWords.reverse()
+    if (sortWordsReverse) sortedWordsCache.reverse()
+
+    sortedWordsCacheState = {
+        sortWordsBy,
+        sortWordsReverse,
+        wordFilter
+    }
+    return sortedWordsCache
+}
+
+function viewWords() {
+    if (!stats_words) return m("div", "Still processing word statistics -- please wait...")
+
+    const sortedWords = sortWords()
 
     let visibleItemCount = Math.round(wordsTableHeight / heightPerItem)
     const visibleHeight = visibleItemCount * heightPerItem
@@ -758,9 +780,6 @@ function processEmail(email) {
         if (!email || email === " ") continue
         // email = email.replace(/^>From /m, "From ")
         email = "From " + email
-        //if (email.includes("From - Mon Oct  5 23:59:04 2009")) {
-        //   console.log("bad email")
-        //}
         const subject = email.match(/^Subject: ([^\n\r]*)/m)
         const title = subject ? subject[1] : ""
         const fromMatch = email.match(/^From: ([^\n\r]*)/m)
