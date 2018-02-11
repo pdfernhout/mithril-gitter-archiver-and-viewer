@@ -158,6 +158,39 @@ function jumpToUser(username) {
     saveStateToHash()
 }
 
+const showHeaders = {}
+
+function rtrim(string) {
+    // Trim trailing space from string
+    return string.replace(/\s*$/,"")
+}
+
+function displayItemContents(message) {
+    const body = message.text
+    if (!body.startsWith("From ")) return body 
+
+    let headers = ""
+    let rest = body
+
+    headers = body.split(/\n\s*\n/)[0]
+    if (headers.length === body.length) {
+        headers = ""
+    } else {
+        headers = rtrim(headers)
+    }
+    rest = body.substring(headers.length)
+
+    rest = rest.trim()
+    return m("div.ba.bw1.pa1", [
+        headers ? [
+            m("button.f6.mr1", { onclick: () => showHeaders[message.id] = !showHeaders[message.id] }, "Headers"),
+        ] : [],
+        showHeaders[message.id] ? m("pre", headers) : [],
+        message.title ? m("span.f4", message.title) : [],
+        m("pre", rest),
+    ])
+}
+
 function viewMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3.mt1", 
         { 
@@ -173,7 +206,7 @@ function viewMessagesForList(subset, includeUser) {
             }, message.username)]
             : [],
         m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, 
-            (selectedMessage === message) ? message.text : message.title || message.text)
+            (selectedMessage === message) ? displayItemContents(message) : message.title || displayItemContents(message))
     ))
 }
 
@@ -775,7 +808,7 @@ function processEmail(email) {
             //}
             const previousDisplayName = users[username].displayName
             if (previousDisplayName !== displayName) {
-                console.log("multiple names for user", username, previousDisplayName, displayName)
+                // console.log("multiple names for user", username, previousDisplayName, displayName)
                 // pick the longest
                 if (!displayName.includes("(") && displayName.length >= previousDisplayName.length) {
                     users[username].displayName = displayName
