@@ -758,15 +758,24 @@ function processEmail(email) {
         if (!email || email === " ") continue
         // email = email.replace(/^>From /m, "From ")
         email = "From " + email
-        const subject = email.match(/^Subject: ([^\n]*)/m)
+        //if (email.includes("From - Mon Oct  5 23:59:04 2009")) {
+        //   console.log("bad email")
+        //}
+        const subject = email.match(/^Subject: ([^\n\r]*)/m)
         const title = subject ? subject[1] : ""
-        const fromMatch = email.match(/^From: ([^\n]*)/m)
+        const fromMatch = email.match(/^From: ([^\n\r]*)/m)
         const from = fromMatch ? fromMatch[1]: "UNKNOWN"
-        const idMatch = email.match(/^Message-Id: ([^\n]*)/m)
+        const idMatch = email.match(/^Message-Id: ([^\n\r]*)/m)
         const id = idMatch ? idMatch[1]: "UNKNOWN:" + unknownIndex++
-        const dateMatch = email.match(/^Date: ([^\n]*)/m)
+        const dateMatch = email.match(/^Date: ([^\n\r]*)/m)
         const dateLong = dateMatch ? dateMatch[1]: "UNKNOWN"
-        const date = new Date(dateLong).toISOString()
+        let date
+        try {
+            date = new Date(dateLong).toISOString()
+        } catch (e) {
+            console.log("Bad date", dateLong)
+            date = dateLong
+        }
 
         let username
         let displayName
@@ -782,7 +791,7 @@ function processEmail(email) {
         username = username.trim()
         displayName = displayName.trim()
 
-        const isoMatch = email.match(/=\?iso-8859-1\?q\?([^?]*)/)
+        const isoMatch = displayName.match(/=\?iso-8859-1\?q\?([^?]*)/i)
         if (isoMatch) {
             displayName = isoMatch[1].replace("=20", " ")
         }
@@ -794,6 +803,7 @@ function processEmail(email) {
         }
 
         username = username.toLowerCase()
+        username = username.replace(" at ", "@")
 
         const message = {
             id,
