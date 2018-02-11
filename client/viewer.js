@@ -167,7 +167,7 @@ function rtrim(string) {
 
 function displayItemContents(message) {
     const body = message.text
-    if (!body.startsWith("From ")) return body 
+    if (!body.startsWith("From ") || !message.title) return body 
 
     let headers = ""
     let rest = body
@@ -737,7 +737,7 @@ function viewGitterArchive() {
     ])
 }
 
-const archiveType = "email"
+const archiveType = "gitter"
 
 async function startup() {
 
