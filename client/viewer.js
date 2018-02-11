@@ -219,7 +219,7 @@ function viewMessagesForUser(username) {
             result.push(message)
         }
     }
-    return viewPage(result)
+    return viewPage(result, "includeUser")
 }
 
 function usersHeaderClick(field) {
