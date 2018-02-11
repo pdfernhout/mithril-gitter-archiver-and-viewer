@@ -79,7 +79,7 @@ function getBootstrapFile(request, response, apiPath, folder) {
     const mimeType = boostrapFiles[fileName]
     if (mimeType) {
         const filePath = path.resolve(__dirname, folder + fileName)
-        respondWithFileContents(response, null, filePath, null, mimeType, "nocache")
+        respondWithFileContents(response, null, filePath, request.url, mimeType, "nocache")
     } else {
         respondWithResourceNotFoundError(response, request.url)
     }

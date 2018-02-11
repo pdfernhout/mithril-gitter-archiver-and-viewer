@@ -5,6 +5,7 @@
 let stats_words = null
 let users = null
 let messages = null
+let loadingFailed = false
 
 // Which view of: users, search, and messages
 let show = "users"
@@ -733,32 +734,42 @@ function viewGitterArchive() {
         m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
         isEverythingLoaded() 
             ? [ viewMain() ] 
-            : viewLoadingProgress()
+            :  (loadingFailed)
+                ? m("div", "Loading failed")
+                : viewLoadingProgress()
     ])
 }
 
-const archiveType = "gitter"
+// const archiveType = "gitter"
+const archiveType = "email"
 
 async function startup() {
+    try {
+        if (archiveType === "gitter") {
+            users = await m.request({
+                method: "GET",
+                url: "data/allUsers.json"
+            })
 
-    if (archiveType === "gitter") {
-        users = await m.request({
-            method: "GET",
-            url: "data/allUsers.json"
-        })
+            messages = await m.request({
+                method: "GET",
+                url: "data/allMessages.json"
+            })
+        } else if (archiveType === "email") {
+            const email = await m.request({
+                method: "GET",
+                url: "data/Bootstrap2.mbox",
+                deserialize: text => text
+            })
 
-        messages = await m.request({
-            method: "GET",
-            url: "data/allMessages.json"
-        })
-    } else if (archiveType === "email") {
-        const email = await m.request({
-            method: "GET",
-            url: "data/Bootstrap2.mbox",
-            deserialize: text => text
-        })
-
-        processEmail(email)
+            processEmail(email)
+        }
+    } catch (e) {
+        console.log("Problem loading data", e)
+        alert("Problem loading data")
+        loadingFailed = true
+        m.redraw()
+        return
     }
 
     updateUserRankAndPostCount()
