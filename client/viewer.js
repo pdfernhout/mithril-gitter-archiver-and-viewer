@@ -167,28 +167,13 @@ function rtrim(string) {
 }
 
 function displayItemContents(message) {
-    const body = message.text
-    if (!body.startsWith("From ") || !message.title) return body 
+    if (!message.headers) return message.text 
 
-    let headers = ""
-    let rest = body
-
-    headers = body.split(/\n\s*\n/)[0]
-    if (headers.length === body.length) {
-        headers = ""
-    } else {
-        headers = rtrim(headers)
-    }
-    rest = body.substring(headers.length)
-
-    rest = rest.trim()
     return m("div.ba.bw1.pa1", [
-        headers ? [
-            m("button.f6.mr1", { onclick: () => showHeaders[message.id] = !showHeaders[message.id] }, "Headers"),
-        ] : [],
-        showHeaders[message.id] ? m("pre", headers) : [],
+        m("button.f6.mr1", { onclick: () => showHeaders[message.id] = !showHeaders[message.id] }, "Headers"),
+        showHeaders[message.id] ? m("pre", message.headers) : [],
         message.title ? m("span.f4", message.title) : [],
-        m("pre", rest),
+        m("pre", message.text),
     ])
 }
 
@@ -523,10 +508,11 @@ function processWordStats(index) {
     for (let i = index; (i < messages.length && i < index + processingPerIteration); i++) {
         // Spilt the message into words and add the results to stats
         const message = messages[i]
+        const textToIndex = (message.title ? message.title + " " : "") + message.text
         // Not removed: - _
         const re = /[\t\n\r(.,/\\#!$%^&*;:{}=`'~()<>?"[\]‘’“”…]/g
         // re = /[^a-z]/g
-        const words = message.text.toLowerCase().replace(re, " ").split(/(\s+)/)
+        const words = textToIndex.toLowerCase().replace(re, " ").split(/(\s+)/)
         for (let word of words) {
             word = word.trim()
             if (!word) continue
@@ -756,13 +742,13 @@ async function startup() {
                 url: "data/allMessages.json"
             })
         } else if (archiveType === "email") {
-            const email = await m.request({
+            const mbox = await m.request({
                 method: "GET",
                 url: "data/Bootstrap2.mbox",
                 deserialize: text => text
             })
 
-            processEmail(email)
+            processEmail(mbox)
         }
     } catch (e) {
         console.log("Problem loading data", e)
@@ -782,28 +768,42 @@ async function startup() {
     m.redraw()
 }
 
-function processEmail(email) {
+function processEmail(mbox) {
     messages = []
     users = {}
-    const emails = email.split(/^From /m)
+    const emails = mbox.split(/^From /m)
     let unknownIndex = 1
     for (let email of emails) {
         if (!email || email === " ") continue
         // email = email.replace(/^>From /m, "From ")
         email = "From " + email
-        const subject = email.match(/^Subject: ([^\n\r]*)/m)
+
+        let headers = ""
+        let body = email
+    
+        headers = email.split(/\n\s*\n/)[0]
+        if (headers.length === email.length) {
+            headers = ""
+        } else {
+            headers = rtrim(headers)
+        }
+        body = email.substring(headers.length)
+    
+        body = body.trim()
+
+        const subject = headers.match(/^Subject: ([^\n\r]*)/m)
         const title = subject ? subject[1] : ""
-        const fromMatch = email.match(/^From: ([^\n\r]*)/m)
+        const fromMatch = headers.match(/^From: ([^\n\r]*)/m)
         const from = fromMatch ? fromMatch[1]: "UNKNOWN"
-        const idMatch = email.match(/^Message-Id: ([^\n\r]*)/m)
+        const idMatch = headers.match(/^Message-Id: ([^\n\r]*)/m)
         const id = idMatch ? idMatch[1]: "UNKNOWN:" + unknownIndex++
-        const dateMatch = email.match(/^Date: ([^\n\r]*)/m)
+        const dateMatch = headers.match(/^Date: ([^\n\r]*)/m)
         const dateLong = dateMatch ? dateMatch[1]: "UNKNOWN"
         let date
         try {
             date = new Date(dateLong).toISOString()
         } catch (e) {
-            console.log("Bad date", dateLong)
+            console.log("Bad date", dateLong, email)
             date = dateLong
         }
 
@@ -839,7 +839,8 @@ function processEmail(email) {
             id,
             sent: date,
             username,
-            text: email,
+            headers,
+            text: body,
             title
         }
         if (users[username]) {
