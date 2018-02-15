@@ -167,13 +167,17 @@ function rtrim(string) {
 }
 
 function displayItemContents(message) {
-    if (!message.headers) return message.text 
+    if (!message.headers || selectedMessage !== message) {
+        return m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, 
+            message.title || message.text
+        )
+    }
 
     return m("div.ba.bw1.pa1", [
         m("button.f6.mr1", { onclick: () => showHeaders[message.id] = !showHeaders[message.id] }, "Headers"),
         showHeaders[message.id] ? m("pre", message.headers) : [],
         message.title ? m("span.f4", message.title) : [],
-        m("pre", message.text),
+        m("div", { style: "white-space: pre-wrap" }, message.text),
     ])
 }
 
@@ -191,8 +195,7 @@ function viewMessagesForList(subset, includeUser) {
                 onclick: () => jumpToUser(message.username)
             }, message.username)]
             : [],
-        m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, 
-            (selectedMessage === message) ? displayItemContents(message) : message.title || displayItemContents(message))
+        displayItemContents(message)
     ))
 }
 
