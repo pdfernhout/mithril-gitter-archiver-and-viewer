@@ -268,7 +268,7 @@ function viewUsers() {
         )
     })
     const sortCharacter = m("span.b", sortUsersReverse ? "▼" : "▲")
-    // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
+    // The spaces between fields are there so if you copy and paste the data it has space separators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
             m("span.dib", { style: "width: 15rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
@@ -304,7 +304,7 @@ let sortedWordsCache = null
 let sortedWordsCacheState = {}
 
 function sortWords() {
-    // Chaching ptimization so not sorting every redraw
+    // Caching optimization so not sorting on every redraw
     if (sortedWordsCache
         && sortedWordsCacheState.sortWordsBy === sortWordsBy
         && sortedWordsCacheState.sortWordsReverse === sortWordsReverse
@@ -411,7 +411,7 @@ function viewWords() {
         )
     })
     const sortCharacter = m("span.b", sortWordsReverse ? "▼" : "▲")
-    // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
+    // The spaces between fields are there so if you copy and paste the data it has space separators for items.
     const header = m("div.ml2.mt1", { key: " HEADER " },
         m("span", 
             {
@@ -503,8 +503,8 @@ const processingPerIteration = 1000
 const accumulated_stats = {}
 let current_stats_index = "..."
 
-// This function incrementally processes some stats and then schedules itself with timeout
-// This is to keep UI responsive during an operation that may take several seconds
+// This function incrementally processes some stats and then schedules itself with timeout.
+// This is to keep UI responsive during an operation that may take several seconds.
 function processWordStats(index) {
     current_stats_index = Math.floor((messages.length - index) / processingPerIteration) 
 

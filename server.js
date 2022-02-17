@@ -56,7 +56,7 @@ function respondWithFileContents(response, sha256, filePath, url, contentType, n
     })
 }
 
-const boostrapFiles = {
+const bootstrapFiles = {
     "bootstrap.html": "text/html",
     "viewer.html": "text/html",
     "viewer.js": "application/javascript",
@@ -67,7 +67,7 @@ const boostrapFiles = {
     "allUsers.json": "application/json",
     "Bootstrap2.mbox": "text/plain",
 }
-
+s
 const apiPathForBootstrap = "/"
 const apiPathForData = "/data/"
 
@@ -76,7 +76,7 @@ function getBootstrapFile(request, response, apiPath, folder) {
     // Only return whitelisted files
     const fileName = parsedURL.pathname.substring(apiPath.length)
     console.log("bootstrap", apiPath, fileName, folder)
-    const mimeType = boostrapFiles[fileName]
+    const mimeType = bootstrapFiles[fileName]
     if (mimeType) {
         const filePath = path.resolve(__dirname, folder + fileName)
         respondWithFileContents(response, null, filePath, request.url, mimeType, "nocache")
