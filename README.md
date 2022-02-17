@@ -1,10 +1,10 @@
 # mithril-gitter-archiver-and-viewer
 
 These are tools in Bash and Node.js for downloading
-all the messages in the Gitter chatroom for MithrilJS/mithril.js
-and then processing them to create some simple statistics.
+all the messages in the Gitter chatroom for MithrilJS/mithril.js,processing the messages to create some simple statistics,
+and viewing the messages using a Mithril UI hosted from a local server.
 
-You could use them for downloading any Gitter chatroom
+You could use the scripts for downloading any Gitter chatroom
 by modifying the hardcoded room ID in the downloading script.
 
 The Mithril Gitter archives are publicly accessible here:
