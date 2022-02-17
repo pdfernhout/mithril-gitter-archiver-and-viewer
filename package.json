@@ -1,8 +1,8 @@
 {
-  "name": "mithril-gitter-archiver",
+  "name": "mithril-gitter-archiver-and-viewer",
   "version": "1.0.0",
-  "description": "Tools for downloading and processing the MithrilJS Gitter archives.",
-  "main": "generate_word_stats.js",
+  "description": "Tools for downloading, processing, and viewing the MithrilJS Gitter archives.",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
