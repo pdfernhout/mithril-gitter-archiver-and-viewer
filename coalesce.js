@@ -9,6 +9,7 @@ const allUsers = {}
 
 const fileNames = fs.readdirSync("messages")
 for (let fileName of fileNames) {
+    if (!fileName.endsWith(".json")) continue
     console.log("processing", fileName)
     const contents = fs.readFileSync("messages/" + fileName)
     const messages = JSON.parse(contents)
