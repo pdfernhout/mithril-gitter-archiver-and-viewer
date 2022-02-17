@@ -1,9 +1,8 @@
-live-test
 messages
 new-messages
 private
-allMessages.json
-allUsers.json
+client/data/allMessages.json
+client/data/allUsers.json
 stats_*
-!data/README_data.md
-data
+!client/data/README_data.md
+client/data

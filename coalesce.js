@@ -1,4 +1,4 @@
-var fs = require('fs');
+var fs = require("fs")
 
 const allMessages = []
 const messageByID = {}
@@ -40,6 +40,6 @@ allMessages.sort((a, b) => a.sent < b.sent ? -1 : (a.sent > b.sent ? 1 : 0))
 
 console.log("uniqueCount", uniqueCount)
 
-fs.writeFileSync("allMessages.json", JSON.stringify(allMessages, null, 1))
+fs.writeFileSync("client/data/allMessages.json", JSON.stringify(allMessages, null, 1))
 
-fs.writeFileSync("allUsers.json", JSON.stringify(allUsers, null, 1))
+fs.writeFileSync("client/data/allUsers.json", JSON.stringify(allUsers, null, 1))

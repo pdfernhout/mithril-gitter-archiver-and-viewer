@@ -1,6 +1,6 @@
-var fs = require('fs');
+var fs = require("fs")
 
-const allMessages = JSON.parse(fs.readFileSync("allMessages.json"))
+const allMessages = JSON.parse(fs.readFileSync("client/data/allMessages.json"))
 /*  Example message:
  {
   "id": "550198834c839f3268162e60",
