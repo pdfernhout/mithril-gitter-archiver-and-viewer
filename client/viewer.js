@@ -755,7 +755,7 @@ async function startup() {
         }
     } catch (e) {
         console.log("Problem loading data", e)
-        alert("Problem loading data")
+        alert("Problem loading data. Did you run coalesce?")
         loadingFailed = true
         m.redraw()
         return

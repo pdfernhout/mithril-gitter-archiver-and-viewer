@@ -109,4 +109,4 @@ const server = http.createServer(handleRequest)
 server.listen(serverPort)
 
 applicationLog("============ server starting ============")
-applicationLog("Server running at http://localhost:" + serverPort)
+applicationLog("Server running at http://localhost:" + serverPort + "/viewer.html")

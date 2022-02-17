@@ -25,7 +25,7 @@ The downloader bash script requires you have "jq" installed for json parsing.
 
 You need to have node installed to ue the data processing tool and launch the server for the viewer.
 
-I have only tested these tools under GNU/Linux.
+These tools have only been tested under GNU/Linux.
 
 ## mithril-gitter-downloader
 
@@ -40,7 +40,11 @@ It took about eight hours to download all the messages with a five second sleep 
 Before running this script, you need to get your own Gitter access token from: https://developer.gitter.im/apps
 
 Then either pass the token on the command line as the first argument or set a shell variable using: 
-> export GITTER_TOKEN=YOUR_TOKEN_HERE
+> $ export GITTER_TOKEN=YOUR_TOKEN_HERE
+
+> $ ./mithril-gitter-downloader.sh
+
+You then need to run coalesce.js (see below) and maybe generate-stats.sh.
 
 TODO: Ideally this downloading script should be smart about restarting downloads and also downloading new messages. But it isn't. As a workaround, you can continue a download by editing the script to set the message ID and file number to start using. Also, in theory, after a successful download, to get more recent messages days later, you could also run the script manually for a bit and then manually stop it (after editing the starting file number in the script to not overwrite previous messages files) -- keeping in mind that coalesce.js will eliminate duplicate messages if there is some overlap. You can also set a stop timestamp.
 
@@ -51,8 +55,10 @@ That file is about 37 megabytes as of this writing (2018).
 
 The current bash download script stores the messages in "new-messages" folder.
 You will need to rename that as messages for the coalesce.js script to work.
-The reason for this is that I did not want to accidentally overwrite hours of previously downloaded
+The reason for this is to avoid accidentally overwriting hours of previously downloaded
 messages by accident if running the script a second time.
+
+> $ node ./coalesce.js
 
 ## generate_user_stats.js
 
@@ -70,6 +76,11 @@ Used to generate stats_words.txt via:
 
 Used to generate stats_words_alphabetical.txt via:
 > node ./generate_word_stats.js --alphabetical > stats/stats_words_alphabetical.txt
+
+## generate-stats.sh
+
+You can call generate all three stats files mentioned above by running:
+> $ ./generate-stats.sh
 
 ## Size of the Mithril Gitter community
 

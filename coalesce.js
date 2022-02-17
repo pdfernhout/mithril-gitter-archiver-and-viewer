@@ -41,6 +41,8 @@ allMessages.sort((a, b) => a.sent < b.sent ? -1 : (a.sent > b.sent ? 1 : 0))
 
 console.log("uniqueCount", uniqueCount)
 
+if (!uniqueCount) console.log("Did you copy the json file from new-messages to the messages folder?")
+
 fs.writeFileSync("client/data/allMessages.json", JSON.stringify(allMessages, null, 1))
 
 fs.writeFileSync("client/data/allUsers.json", JSON.stringify(allUsers, null, 1))
