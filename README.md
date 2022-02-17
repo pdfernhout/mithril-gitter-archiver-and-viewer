@@ -1,8 +1,9 @@
 # mithril-gitter-archiver-and-viewer
 
-These are tools in Bash and Node.js for downloading
-all the messages in the Gitter chatroom for MithrilJS/mithril.js,processing the messages to create some simple statistics,
-and viewing the messages using a Mithril UI hosted from a local server.
+These are tools for Bash and Node.js to download
+all the messages in the Gitter chatroom for MithrilJS/mithril.js,
+process the messages to create some simple statistics,
+and view the messages using a Mithril UI hosted from a local server.
 
 You could use the scripts for downloading any Gitter chatroom
 by modifying the hardcoded room ID in the downloading script.
@@ -40,9 +41,10 @@ It took about eight hours to download all the messages with a five second sleep 
 Before running this script, you need to get your own Gitter access token from: https://developer.gitter.im/apps
 
 Then either pass the token on the command line as the first argument or set a shell variable using: 
-> $ export GITTER_TOKEN=YOUR_TOKEN_HERE
+> export GITTER_TOKEN=YOUR_TOKEN_HERE
 
-> $ ./mithril-gitter-downloader.sh
+Running the download script (assuming you have exported a token as above):
+> ./mithril-gitter-downloader.sh
 
 You then need to run coalesce.js (see below) and maybe generate-stats.sh.
 
@@ -52,20 +54,21 @@ TODO: Ideally this downloading script should be smart about restarting downloads
 
 This is a node script to convert all the messages into one big allMessages.json file.
 That file is about 37 megabytes as of this writing (2018).
+It also create a smaller allUser.json file.
 
 The current bash download script stores the messages in "new-messages" folder.
-You will need to rename that as messages for the coalesce.js script to work.
+You will need to manually copy the JSON files in there to the "messages" folder for the coalesce.js script to work.
 The reason for this is to avoid accidentally overwriting hours of previously downloaded
 messages by accident if running the script a second time.
 
-> $ node ./coalesce.js
+> node ./coalesce.js
 
 ## generate_user_stats.js
 
 Outputs a list of all users in order of how many posts they have made.
 
 Used to generate stat_users.txt via:
-> $ node ./generate_user_stats.js > stats/stats_users.txt
+> node ./generate_user_stats.js > stats/stats_users.txt
 
 ## generate_word_stats.js
 
@@ -80,11 +83,11 @@ Used to generate stats_words_alphabetical.txt via:
 ## generate-stats.sh
 
 You can call generate all three stats files mentioned above by running:
-> $ ./generate-stats.sh
+> ./generate-stats.sh
 
 ## Size of the Mithril Gitter community
 
-tl;dr More than 800 users have posted to the Mithril Gitter community -- for a total of over 160,000 messages (as of 2018).
+More than 800 users have posted to the Mithril Gitter community -- for a total of over 160,000 messages (as of 2018).
 
 # Viewer for Mithril Gitter Archive data and related statistics.
 
@@ -95,9 +98,9 @@ The supporting data needs to be prepared using the downloader and related tool.
 ## Usage
 
 First, on your command line from the project root directory:
-> $ node server.js
+> node server.js
 
-Then, in your browser:
+Then, in your browser, navigate to:
 > http://localhost:8444/viewer.html
 
 ## License:
