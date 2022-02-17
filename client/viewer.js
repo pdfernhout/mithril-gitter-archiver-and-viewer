@@ -729,8 +729,8 @@ function viewGitterArchive() {
     ])
 }
 
-// const archiveType = "gitter"
-const archiveType = "email"
+const archiveType = "gitter"
+// const archiveType = "email"
 
 async function startup() {
     try {
