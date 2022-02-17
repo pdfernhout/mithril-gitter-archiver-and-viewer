@@ -5,6 +5,7 @@
 let stats_words = null
 let users = null
 let messages = null
+let loadingFailed = false
 
 // Which view of: users, search, and messages
 let show = "users"
@@ -158,6 +159,28 @@ function jumpToUser(username) {
     saveStateToHash()
 }
 
+const showHeaders = {}
+
+function rtrim(string) {
+    // Trim trailing space from string
+    return string.replace(/\s*$/,"")
+}
+
+function displayItemContents(message) {
+    if (!message.headers || selectedMessage !== message) {
+        return m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, 
+            message.title || message.text
+        )
+    }
+
+    return m("div.ba.bw1.pa1", [
+        m("button.f6.mr1", { onclick: () => showHeaders[message.id] = !showHeaders[message.id] }, "Headers"),
+        showHeaders[message.id] ? m("pre", message.headers) : [],
+        message.title ? m("span.f4", message.title) : [],
+        m("div", { style: "white-space: pre-wrap" }, message.text),
+    ])
+}
+
 function viewMessagesForList(subset, includeUser) {
     return subset.map(message => m("div.ml3.mt1", 
         { 
@@ -172,7 +195,7 @@ function viewMessagesForList(subset, includeUser) {
                 onclick: () => jumpToUser(message.username)
             }, message.username)]
             : [],
-        m("span.dib", { style: (selectedMessage === message) ? "white-space: pre-wrap" : "" }, message.text)
+        displayItemContents(message)
     ))
 }
 
@@ -185,7 +208,7 @@ function viewMessagesForUser(username) {
             result.push(message)
         }
     }
-    return viewPage(result)
+    return viewPage(result, "includeUser")
 }
 
 function usersHeaderClick(field) {
@@ -233,9 +256,9 @@ function viewUsers() {
                         saveStateToHash()
                     }
                 },
-                m("span.dib", { style: "width: 12rem" }, user.username),
+                m("span.dib", { style: "width: 15rem" }, user.username),
                 " ",
-                m("span.i.dib", { style: "width: 12rem" }, user.displayName),
+                m("span.i.dib", { style: "width: 15rem" }, user.displayName),
                 " ",
                 m("span.dib.w3", user.rank),
                 " ",
@@ -248,9 +271,9 @@ function viewUsers() {
     // Thes space between fields are there so if you copy and paste the data it has space seperators for items.
     const header = m("div.ml2", { key: " HEADER " },
         m("span", 
-            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 15rem", onclick: () => usersHeaderClick("id") }, "ID", ((sortUsersBy === "id") ? sortCharacter : [])),
             " ",
-            m("span.dib", { style: "width: 12rem", onclick: () => usersHeaderClick("name") }, "Name", ((sortUsersBy === "name") ? sortCharacter : [])),
+            m("span.dib", { style: "width: 15rem", onclick: () => usersHeaderClick("name") }, "Name", ((sortUsersBy === "name") ? sortCharacter : [])),
             " ",
             m("span.dib.w3", { onclick: () => usersHeaderClick("rank") }, "Rank", ((sortUsersBy === "rank") ? sortCharacter : [])),
             " ",
@@ -277,10 +300,19 @@ function limitLength(word, limit) {
     return word.substring(0, limit - 3) + "..."
 }
 
-function viewWords() {
-    if (!stats_words) return m("div", "Still processing word statistics -- please wait...")
+let sortedWordsCache = null
+let sortedWordsCacheState = {}
 
-    // Optimize so not sorting every redraw
+function sortWords() {
+    // Chaching ptimization so not sorting every redraw
+    if (sortedWordsCache
+        && sortedWordsCacheState.sortWordsBy === sortWordsBy
+        && sortedWordsCacheState.sortWordsReverse === sortWordsReverse
+        && sortedWordsCacheState.wordFilter === wordFilter
+    ) {
+        return sortedWordsCache
+    }
+
     let re
     try {
         re = new RegExp(wordFilter, "i")
@@ -288,22 +320,35 @@ function viewWords() {
         re = null
         wordRegexError = e.message
     }
-    const sortedWords = re ? stats_words.filter(item => !wordFilter || re.test(item.word)) : []
+    sortedWordsCache = re ? stats_words.filter(item => !wordFilter || re.test(item.word)) : []
     switch (sortWordsBy) {
     case "alphabetical":
-        stats_words.sort(sortByWord)
+        sortedWordsCache.sort(sortByWord)
         break
     case "rank":
-        stats_words.sort(sortByFrequencyAndWord)
+        sortedWordsCache.sort(sortByFrequencyAndWord)
         break
     case "frequency":
-        stats_words.sort(sortByFrequencyAndWord)
+        sortedWordsCache.sort(sortByFrequencyAndWord)
         break
     default:
         throw new Error("unexpected word sort case: " + sortWordsBy)
     }
 
-    if (sortWordsReverse) sortedWords.reverse()
+    if (sortWordsReverse) sortedWordsCache.reverse()
+
+    sortedWordsCacheState = {
+        sortWordsBy,
+        sortWordsReverse,
+        wordFilter
+    }
+    return sortedWordsCache
+}
+
+function viewWords() {
+    if (!stats_words) return m("div", "Still processing word statistics -- please wait...")
+
+    const sortedWords = sortWords()
 
     let visibleItemCount = Math.round(wordsTableHeight / heightPerItem)
     const visibleHeight = visibleItemCount * heightPerItem
@@ -466,10 +511,11 @@ function processWordStats(index) {
     for (let i = index; (i < messages.length && i < index + processingPerIteration); i++) {
         // Spilt the message into words and add the results to stats
         const message = messages[i]
+        const textToIndex = (message.title ? message.title + " " : "") + message.text
         // Not removed: - _
         const re = /[\t\n\r(.,/\\#!$%^&*;:{}=`'~()<>?"[\]‘’“”…]/g
         // re = /[^a-z]/g
-        const words = message.text.toLowerCase().replace(re, " ").split(/(\s+)/)
+        const words = textToIndex.toLowerCase().replace(re, " ").split(/(\s+)/)
         for (let word of words) {
             word = word.trim()
             if (!word) continue
@@ -662,7 +708,7 @@ function viewMain() {
 }
 
 function isEverythingLoaded() {
-    return messages && users
+    return messages !== null && users !== null
 }
 
 function viewLoadingProgress() {
@@ -677,34 +723,157 @@ function viewGitterArchive() {
         m("h1.ba.b--blue", { class: "title" }, "Mithril Gitter Archive Viewer"),
         isEverythingLoaded() 
             ? [ viewMain() ] 
-            : viewLoadingProgress()
+            :  (loadingFailed)
+                ? m("div", "Loading failed")
+                : viewLoadingProgress()
     ])
 }
 
+const archiveType = "gitter"
+// const archiveType = "email"
+
 async function startup() {
+    try {
+        if (archiveType === "gitter") {
+            users = await m.request({
+                method: "GET",
+                url: "data/allUsers.json"
+            })
 
-    users = await m.request({
-        method: "GET",
-        url: "data/allUsers.json"
-    })
+            messages = await m.request({
+                method: "GET",
+                url: "data/allMessages.json"
+            })
+        } else if (archiveType === "email") {
+            const mbox = await m.request({
+                method: "GET",
+                url: "data/Bootstrap2.mbox",
+                deserialize: text => text
+            })
 
-    // await on this later so we can process the user data while we are waiting
-    const promiseForAllMessages = m.request({
-        method: "GET",
-        url: "data/allMessages.json"
-    })
-
-    messages = await promiseForAllMessages
+            processEmail(mbox)
+        }
+    } catch (e) {
+        console.log("Problem loading data", e)
+        alert("Problem loading data")
+        loadingFailed = true
+        m.redraw()
+        return
+    }
 
     updateUserRankAndPostCount()
-
-    m.redraw()
-
+ 
     setTimeout(() => {
         processWordStats(0)
     }, 0)
 
     loadStateFromHash(m.route.param())
+    m.redraw()
+}
+
+function processEmail(mbox) {
+    messages = []
+    users = {}
+    const emails = mbox.split(/^From /m)
+    let unknownIndex = 1
+    for (let email of emails) {
+        if (!email || email === " ") continue
+        // email = email.replace(/^>From /m, "From ")
+        email = "From " + email
+
+        let headers = ""
+        let body = email
+    
+        headers = email.split(/\n\s*\n/)[0]
+        if (headers.length === email.length) {
+            headers = ""
+        } else {
+            headers = rtrim(headers)
+        }
+        body = email.substring(headers.length)
+    
+        body = body.trim()
+
+        const subject = headers.match(/^Subject: ([^\n\r]*)/m)
+        const title = subject ? subject[1] : ""
+        const fromMatch = headers.match(/^From: ([^\n\r]*)/m)
+        const from = fromMatch ? fromMatch[1]: "UNKNOWN"
+        const idMatch = headers.match(/^Message-Id: ([^\n\r]*)/m)
+        const id = idMatch ? idMatch[1]: "UNKNOWN:" + unknownIndex++
+        const dateMatch = headers.match(/^Date: ([^\n\r]*)/m)
+        const dateLong = dateMatch ? dateMatch[1]: "UNKNOWN"
+        let date
+        try {
+            date = new Date(dateLong).toISOString()
+        } catch (e) {
+            console.log("Bad date", dateLong, email)
+            date = dateLong
+        }
+
+        let username
+        let displayName
+        if (from.includes("<")) {
+            const emailAddressMatch = from.match(/(.*)<([^>]*)>/)
+            displayName = emailAddressMatch ? emailAddressMatch[1] : ""
+            username = emailAddressMatch ? emailAddressMatch[2] : from
+            displayName = displayName.replace(/"/gi, "")
+        } else {
+            username = from
+            displayName = ""
+        }
+        username = username.trim()
+        displayName = displayName.trim()
+
+        const isoMatch = displayName.match(/=\?iso-8859-1\?q\?([^?]*)/i)
+        if (isoMatch) {
+            displayName = isoMatch[1].replace("=20", " ")
+        }
+
+        if (username.includes("(")) {
+            const parenUserName = username
+            username = parenUserName.split("(")[0].trim()
+            displayName = parenUserName.split("(")[1].split(")")[0].trim()
+        }
+
+        username = username.toLowerCase()
+        username = username.replace(" at ", "@")
+
+        const message = {
+            id,
+            sent: date,
+            username,
+            headers,
+            text: body,
+            title
+        }
+        if (users[username]) {
+            //if (users[username].displayName === username) {
+            //    users[username].displayName = displayName || username
+            //}
+            const previousDisplayName = users[username].displayName
+            if (previousDisplayName !== displayName) {
+                // console.log("multiple names for user", username, previousDisplayName, displayName)
+                // pick the longest
+                if (!displayName.includes("(") && displayName.length >= previousDisplayName.length) {
+                    users[username].displayName = displayName
+                }
+            }
+        }
+        else {
+            users[username] = {
+                username,
+                displayName: displayName
+            }
+        }
+        messages.push(message)
+    }
+    
+    // Ensure all users have a displayName
+    for (let username of Object.keys(users)) {
+        const user = users[username]
+        const name = user.username.split("@")[0]
+        if (!user.displayName) user.displayName = name
+    }
 }
 
 function updateUserRankAndPostCount() {
