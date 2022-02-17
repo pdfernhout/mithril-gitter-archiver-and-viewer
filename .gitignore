@@ -1,7 +1,9 @@
+live-test
 messages
 new-messages
 private
-live-test
 allMessages.json
 allUsers.json
 stats_*
+!data/README_data.md
+data
